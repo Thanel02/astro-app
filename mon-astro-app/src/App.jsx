@@ -7,7 +7,7 @@ import {
 
 // --- CONFIGURATION ---
 // Remplacez par votre lien Stripe (Mode Test)
-const STRIPE_LINK = "https://buy.stripe.com/test_..."; 
+const STRIPE_LINK = "https://buy.stripe.com/test_28EaEW7n8gVEaXTa9o4AU00"; 
 
 // Récupération des clés depuis le fichier .env
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
