@@ -100,7 +100,9 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
         const { data, error } = await supabase
           .from('weekly_horoscopes')
           .select('*')
-          .eq('sign_id', sign.id)
+          // CORRECTION ICI : On utilise sign.name (ex: "Bélier") au lieu de sign.id (ex: "belier")
+          // car votre base de données contient les noms avec majuscules et accents.
+          .eq('sign_id', sign.name) 
           .order('week_start_date', { ascending: false }) 
           .limit(1)
           .single();
@@ -117,7 +119,7 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
     };
 
     fetchHoroscope();
-  }, [sign.id]);
+  }, [sign.name]); // On écoute le changement de nom
 
   if (loading) {
     return (
