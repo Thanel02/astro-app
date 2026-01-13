@@ -18,6 +18,7 @@ console.log("Supabase URL:", supabaseUrl ? "OK" : "MANQUANTE");
 console.log("Supabase Key:", supabaseKey ? "OK" : "MANQUANTE");
 
 // Initialisation du client Supabase
+// On ajoute une sécurité : si les clés manquent, supabase sera null (évite le crash blanc)
 const supabase = (supabaseUrl && supabaseKey) 
   ? createClient(supabaseUrl, supabaseKey)
   : null;
@@ -39,6 +40,7 @@ const ZODIAC_SIGNS = [
 ];
 
 // --- COMPOSANTS UI ---
+
 const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }) => {
   const baseStyle = "px-6 py-3 rounded-full font-medium transition-all duration-300 transform active:scale-95 shadow-sm flex items-center justify-center";
   const variants = {
@@ -47,11 +49,18 @@ const Button = ({ children, onClick, variant = 'primary', className = '', disabl
     outline: "border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50",
     ghost: "text-slate-500 hover:text-indigo-600 hover:bg-slate-50"
   };
-  return <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>{children}</button>;
+
+  return (
+    <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>
+      {children}
+    </button>
+  );
 };
 
 const Card = ({ children, className = '', onClick }) => (
-  <div onClick={onClick} className={`bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 ${className}`}>{children}</div>
+  <div onClick={onClick} className={`bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 ${className}`} >
+    {children}
+  </div>
 );
 
 // --- VUES ---
@@ -59,7 +68,9 @@ const Card = ({ children, className = '', onClick }) => (
 const HomeView = ({ onSelectSign }) => (
   <div className="max-w-5xl mx-auto px-4 py-12">
     <div className="text-center mb-16 space-y-4">
-      <h1 className="text-4xl md:text-5xl font-serif text-slate-900 tracking-tight">Astro<span className="text-indigo-600">Weekly</span></h1>
+      <h1 className="text-4xl md:text-5xl font-serif text-slate-900 tracking-tight">
+        Astro<span className="text-indigo-600">Weekly</span>
+      </h1>
       <p className="text-slate-500 text-lg max-w-xl mx-auto">Votre guidance hebdomadaire connectée.</p>
     </div>
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
@@ -78,6 +89,7 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
   const [loading, setLoading] = useState(true);
   const [debugError, setDebugError] = useState(null);
 
+  // Récupération des données réelles
   useEffect(() => {
     const fetchHoroscope = async () => {
       setLoading(true);
@@ -85,7 +97,6 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
       try {
         if (!supabase) throw new Error("CLÉS MANQUANTES : Le fichier .env est mal configuré ou introuvable.");
 
-        // Récupérer le dernier horoscope
         const { data, error } = await supabase
           .from('weekly_horoscopes')
           .select('*')
@@ -95,18 +106,27 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
           .single();
 
         if (error && error.code !== 'PGRST116') throw error; 
+        
         setHoroscope(data);
       } catch (err) {
-        console.error("Erreur:", err);
+        console.error("Erreur fetch:", err);
         setDebugError(err.message);
       } finally {
         setLoading(false);
       }
     };
+
     fetchHoroscope();
   }, [sign.id]);
 
-  if (loading) return <div className="min-h-[50vh] flex flex-col items-center justify-center text-indigo-600"><Loader2 className="animate-spin mb-4" size={40} /><p>Connexion aux astres...</p></div>;
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center text-indigo-600">
+        <Loader2 className="animate-spin mb-4" size={40} />
+        <p>Connexion aux astres...</p>
+      </div>
+    );
+  }
 
   // Affichage des erreurs de connexion pour vous aider à débugger
   if (debugError) {
@@ -126,7 +146,10 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
       <div className="max-w-md mx-auto mt-20 text-center p-8 bg-white rounded-3xl border border-slate-100 shadow-sm">
         <AlertCircle size={48} className="mx-auto text-indigo-300 mb-4" />
         <h3 className="text-xl font-bold text-slate-800 mb-2">Les astres sont silencieux</h3>
-        <p className="text-slate-500 mb-6">Aucun horoscope trouvé pour {sign.name}. Lancez n8n pour générer les données !</p>
+        <p className="text-slate-500 mb-6">
+          L'horoscope de cette semaine n'est pas encore disponible pour le signe {sign.name}. 
+          Vérifiez que votre robot n8n a bien tourné et que la table "weekly_horoscopes" contient des données !
+        </p>
         <Button onClick={onGoBack} variant="secondary">Choisir un autre signe</Button>
       </div>
     );
@@ -134,26 +157,41 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <button onClick={onGoBack} className="flex items-center text-slate-400 hover:text-indigo-600 mb-8 transition-colors"><ArrowLeft size={18} className="mr-2" /> Retour</button>
+      <button onClick={onGoBack} className="flex items-center text-slate-400 hover:text-indigo-600 mb-8 transition-colors">
+        <ArrowLeft size={18} className="mr-2" /> Retour
+      </button>
+
       <div className="text-center mb-10">
         <div className="text-6xl mb-4 text-indigo-900">{sign.icon}</div>
         <h2 className="text-3xl font-serif text-slate-900 mb-2">{sign.name}</h2>
         <p className="text-indigo-600 font-medium">Semaine du {new Date(horoscope.week_start_date).toLocaleDateString()}</p>
         {isPremium && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold mt-2"><Star size={10}/> MEMBRE PREMIUM</span>}
       </div>
+
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-8 pb-4">
-          <div className="flex items-center gap-2 text-xs font-bold text-indigo-500 uppercase tracking-widest mb-4"><Sparkles size={14} /><span>Énergies</span></div>
+          <div className="flex items-center gap-2 text-xs font-bold text-indigo-500 uppercase tracking-widest mb-4">
+            <Sparkles size={14} /><span>Énergies</span>
+          </div>
           <p className="text-slate-700 leading-relaxed text-lg mb-6">{horoscope.intro}</p>
-          <h3 className="text-xl font-medium text-slate-900 mb-3 mt-8 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 text-xs">♥</span> Amour</h3>
+          <h3 className="text-xl font-medium text-slate-900 mb-3 mt-8 flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 text-xs">♥</span> Amour
+          </h3>
           <p className="text-slate-600 leading-relaxed">{horoscope.love}</p>
         </div>
+
         <div className="relative">
           <div className={`p-8 pt-0 transition-all duration-500 ${!isPremium ? 'opacity-30 blur-[2px] select-none h-32 overflow-hidden' : ''}`}>
-             <h3 className="text-xl font-medium text-slate-900 mb-3 mt-4 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-500 text-xs">$</span> Travail</h3>
+             <h3 className="text-xl font-medium text-slate-900 mb-3 mt-4 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-500 text-xs">$</span> Travail
+            </h3>
             <p className="text-slate-600 leading-relaxed mb-6">{horoscope.work}</p>
+
             <div className="bg-indigo-50 rounded-xl p-6 mt-8 border border-indigo-100">
-               <h3 className="text-lg font-bold text-indigo-900 mb-4 flex items-center gap-2"><Lock size={16} className={isPremium ? "hidden" : "inline"}/><span className={!isPremium ? "blur-sm" : ""}>Guide Privé</span></h3>
+               <h3 className="text-lg font-bold text-indigo-900 mb-4 flex items-center gap-2">
+                 <Lock size={16} className={isPremium ? "hidden" : "inline"}/>
+                 <span className={!isPremium ? "blur-sm" : ""}>Guide Privé</span>
+               </h3>
                {horoscope.premium_data && (
                  <div className="space-y-4 text-indigo-800">
                     <p><strong>Conseil :</strong> {horoscope.premium_data.advice}</p>
@@ -163,12 +201,20 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
                )}
             </div>
           </div>
+
           {!isPremium && (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-end pb-8 bg-gradient-to-t from-white via-white/90 to-transparent">
               <div className="text-center p-6 max-w-sm mx-auto animate-fade-in-up">
                 <Lock size={20} className="mx-auto mb-4 text-indigo-600"/>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Débloquez votre destinée</h3>
-                {session ? ( <Button onClick={onSubscribeReq} className="w-full gap-2"><CreditCard size={18} /> S'abonner (2.99€)</Button> ) : ( <Button onClick={onAuthReq} className="w-full">Connexion requise</Button> )}
+                {session ? (
+                   <Button onClick={onSubscribeReq} className="w-full gap-2">
+                      <CreditCard size={18} /> S'abonner (2.99€)
+                   </Button>
+                ) : (
+                   <Button onClick={onAuthReq} className="w-full">Connexion requise</Button>
+                )}
+                
               </div>
             </div>
           )}
@@ -185,8 +231,12 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode }) => {
   const [error, setError] = useState(null);
 
   const handleAuth = async () => {
-    if (!supabase) { setError("Erreur : Clés Supabase manquantes dans le fichier .env"); return; }
-    setLoading(true); setError(null);
+    if (!supabase) {
+      setError("Erreur : Clés Supabase manquantes dans le fichier .env");
+      return;
+    }
+    setLoading(true);
+    setError(null);
     try {
       if (isLoginMode) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -194,13 +244,18 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode }) => {
       } else {
         const { error: signUpError, data } = await supabase.auth.signUp({ email, password });
         if (signUpError) throw signUpError;
+        
         if (data?.user) {
              const { error: profileError } = await supabase.from('profiles').insert([{ id: data.user.id, is_premium: false }]);
              if (profileError && profileError.code !== '23505') console.error(profileError);
         }
       }
       onAuthSuccess();
-    } catch (err) { setError(err.message); } finally { setLoading(false); }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -228,25 +283,40 @@ export default function App() {
 
   useEffect(() => {
     if (!supabase) return;
+    
     const checkPremium = async (userId) => {
       const { data } = await supabase.from('profiles').select('is_premium').eq('id', userId).single();
       if (data) setIsPremium(data.is_premium);
     };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) checkPremium(session.user.id);
     });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) checkPremium(session.user.id);
       else setIsPremium(false);
     });
+
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleSelectSign = (sign) => { setSelectedSign(sign); setCurrentView('read'); };
-  const handleLogout = async () => { if (supabase) await supabase.auth.signOut(); setIsMenuOpen(false); };
-  const handleSubscribe = () => { const finalLink = session ? `${STRIPE_LINK}?client_reference_id=${session.user.id}` : STRIPE_LINK; window.location.href = finalLink; };
+  const handleSelectSign = (sign) => {
+    setSelectedSign(sign);
+    setCurrentView('read');
+  };
+
+  const handleLogout = async () => {
+    if (supabase) await supabase.auth.signOut();
+    setIsMenuOpen(false);
+  };
+
+  const handleSubscribe = () => {
+    const finalLink = session ? `${STRIPE_LINK}?client_reference_id=${session.user.id}` : STRIPE_LINK;
+    window.location.href = finalLink; 
+  };
 
   const Header = () => (
     <nav className="border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-50">
@@ -256,7 +326,9 @@ export default function App() {
           <span className="font-serif font-bold text-xl tracking-tight">AstroWeekly</span>
         </div>
         <div className="hidden md:flex items-center gap-4">
-          {!session ? ( <button onClick={() => setCurrentView('login')} className="text-indigo-600 font-medium text-sm">Connexion</button> ) : (
+          {!session ? (
+            <button onClick={() => setCurrentView('login')} className="text-indigo-600 font-medium text-sm">Connexion</button>
+          ) : (
             <div className="flex items-center gap-3">
               {isPremium && <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-full flex items-center gap-1"><Star size={10} fill="currentColor"/> PRO</span>}
               <button onClick={handleLogout} className="p-2 hover:bg-slate-100 rounded-full text-slate-500"><LogOut size={16}/></button>
@@ -265,7 +337,15 @@ export default function App() {
         </div>
         <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-slate-600">{isMenuOpen ? <X/> : <Menu/>}</button>
       </div>
-      {isMenuOpen && ( <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-slate-100 p-4 shadow-lg"> {!session ? ( <Button onClick={() => { setCurrentView('login'); setIsMenuOpen(false); }} className="w-full">Connexion</Button> ) : ( <Button onClick={handleLogout} variant="ghost" className="w-full">Se déconnecter</Button> )} </div> )}
+      {isMenuOpen && (
+        <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-slate-100 p-4 shadow-lg">
+          {!session ? (
+            <Button onClick={() => { setCurrentView('login'); setIsMenuOpen(false); }} className="w-full">Connexion</Button>
+          ) : (
+             <Button onClick={handleLogout} variant="ghost" className="w-full">Se déconnecter</Button>
+          )}
+        </div>
+      )}
     </nav>
   );
 
@@ -274,11 +354,24 @@ export default function App() {
       <Header />
       <main>
         {currentView === 'home' && <HomeView onSelectSign={handleSelectSign} />}
+        
         {currentView === 'read' && selectedSign && (
-          <ReadingView sign={selectedSign} session={session} isPremium={isPremium} onGoBack={() => setCurrentView('home')} onAuthReq={() => setCurrentView('login')} onSubscribeReq={handleSubscribe} />
+          <ReadingView 
+            sign={selectedSign} 
+            session={session} 
+            isPremium={isPremium}
+            onGoBack={() => setCurrentView('home')}
+            onAuthReq={() => setCurrentView('login')}
+            onSubscribeReq={handleSubscribe}
+          />
         )}
+
         {(currentView === 'login' || currentView === 'signup') && (
-          <AuthView isLoginMode={currentView === 'login'} onAuthSuccess={() => setCurrentView('home')} onSwitchToLogin={() => setCurrentView(currentView === 'login' ? 'signup' : 'login')} />
+          <AuthView 
+            isLoginMode={currentView === 'login'}
+            onAuthSuccess={() => setCurrentView('home')}
+            onSwitchToLogin={() => setCurrentView(currentView === 'login' ? 'signup' : 'login')}
+          />
         )}
       </main>
     </div>
