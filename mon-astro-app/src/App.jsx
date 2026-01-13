@@ -100,8 +100,7 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
         const { data, error } = await supabase
           .from('weekly_horoscopes')
           .select('*')
-          // CORRECTION ICI : On utilise sign.name (ex: "Bélier") au lieu de sign.id (ex: "belier")
-          // car votre base de données contient les noms avec majuscules et accents.
+          // Utilisation de sign.name (ex: "Bélier") pour matcher la base de données
           .eq('sign_id', sign.name) 
           .order('week_start_date', { ascending: false }) 
           .limit(1)
@@ -119,7 +118,7 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
     };
 
     fetchHoroscope();
-  }, [sign.name]); // On écoute le changement de nom
+  }, [sign.name]);
 
   if (loading) {
     return (
@@ -189,6 +188,7 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
             </h3>
             <p className="text-slate-600 leading-relaxed mb-6">{horoscope.work}</p>
 
+            {/* SECTION PREMIUM MISE À JOUR SELON TON CSV */}
             <div className="bg-indigo-50 rounded-xl p-6 mt-8 border border-indigo-100">
                <h3 className="text-lg font-bold text-indigo-900 mb-4 flex items-center gap-2">
                  <Lock size={16} className={isPremium ? "hidden" : "inline"}/>
@@ -196,9 +196,14 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
                </h3>
                {horoscope.premium_data && (
                  <div className="space-y-4 text-indigo-800">
-                    <p><strong>Conseil :</strong> {horoscope.premium_data.advice}</p>
-                    <p><strong>Numéros :</strong> {horoscope.premium_data.lucky_numbers}</p>
-                    <p><strong>Détails :</strong> {horoscope.premium_data.detailed_forecast}</p>
+                    <p><strong>Couleur :</strong> {horoscope.premium_data.color}</p>
+                    <p><strong>Compatibilité :</strong> {horoscope.premium_data.compatibility}</p>
+                    <p><strong>Numéros chance :</strong> {
+                      // On vérifie si c'est une liste (array) et on l'affiche proprement
+                      Array.isArray(horoscope.premium_data.lucky_numbers) 
+                        ? horoscope.premium_data.lucky_numbers.join(', ') 
+                        : horoscope.premium_data.lucky_numbers
+                    }</p>
                  </div>
                )}
             </div>
