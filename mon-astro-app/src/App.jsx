@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js'; // Import direct de la librairie
+import { createClient } from '@supabase/supabase-js';
 import { 
   Star, Moon, Sun, Lock, ChevronRight, User, Check, Sparkles, 
-  ArrowLeft, Menu, X, LogOut, Loader2 
+  ArrowLeft, Menu, X, LogOut, Loader2, CreditCard, AlertCircle 
 } from 'lucide-react';
 
-// --- CONFIGURATION SUPABASE ---
-// On initialise la connexion ici pour simplifier.
-// Assurez-vous d'avoir bien créé votre fichier .env à la racine du projet avec vos clés.
+// --- CONFIGURATION ---
+// Remplacez par votre lien Stripe (Mode Test) si vous en avez un, sinon laissez vide pour l'instant
+const STRIPE_LINK = "https://buy.stripe.com/test_..."; 
+
+// Récupération des clés depuis le fichier .env
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// On crée le client. Si les clés manquent (ex: dans la prévisualisation), on gère l'erreur calmement.
+// Initialisation du client Supabase
+// On vérifie que les clés existent pour éviter les crashs si le .env est mal configuré
 const supabase = (supabaseUrl && supabaseKey) 
   ? createClient(supabaseUrl, supabaseKey)
   : null;
 
-// --- DONNÉES TEMPORAIRES (En attendant la Phase 4) ---
+// --- CONSTANTES ---
 const ZODIAC_SIGNS = [
   { id: 'belier', name: 'Bélier', dates: '21 Mars - 19 Avril', element: 'Feu', icon: '♈' },
   { id: 'taureau', name: 'Taureau', dates: '20 Avril - 20 Mai', element: 'Terre', icon: '♉' },
@@ -31,17 +34,6 @@ const ZODIAC_SIGNS = [
   { id: 'verseau', name: 'Verseau', dates: '20 Janvier - 18 Février', element: 'Air', icon: '♒' },
   { id: 'poissons', name: 'Poissons', dates: '19 Février - 20 Mars', element: 'Eau', icon: '♓' },
 ];
-
-const MOCK_HOROSCOPE = {
-  intro: "Cette semaine marque un tournant décisif. Les énergies planétaires s'alignent pour offrir une clarté nouvelle sur vos projets personnels.",
-  love: "Côté cœur, Vénus adoucit les tensions. Si vous êtes en couple, privilégiez le dialogue mardi soir. Célibataire ? Une rencontre inattendue se profile.",
-  work: "Au travail, la patience sera votre meilleure alliée. Une opportunité financière se dessine vers jeudi, restez attentif aux détails.",
-  premium_content: {
-    advice: "Prenez le temps de méditer sur vos racines. L'ancrage est essentiel cette semaine.",
-    lucky_numbers: "7, 12, 24, 33",
-    detailed_forecast: "La rétrogradation de Mercure influence votre secteur de la communication intime. Dites ce que vous avez sur le cœur."
-  }
-};
 
 // --- COMPOSANTS UI ---
 
@@ -88,8 +80,64 @@ const HomeView = ({ onSelectSign }) => (
   </div>
 );
 
-const ReadingView = ({ sign, session, onGoBack, onSubscribeClick }) => {
-  const isPremium = !!session; 
+const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscribeReq }) => {
+  const [horoscope, setHoroscope] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // C'est ici que la magie opère : on va chercher les vraies données
+  useEffect(() => {
+    const fetchHoroscope = async () => {
+      setLoading(true);
+      try {
+        if (!supabase) throw new Error("Supabase non configuré");
+
+        // On récupère le dernier horoscope généré pour ce signe
+        // On trie par date décroissante pour avoir le plus récent
+        const { data, error } = await supabase
+          .from('weekly_horoscopes')
+          .select('*')
+          .eq('sign_id', sign.id)
+          .order('week_start_date', { ascending: false }) 
+          .limit(1)
+          .single();
+
+        // Note: PGRST116 est l'erreur renvoyée si aucune ligne n'est trouvée, ce n'est pas grave
+        if (error && error.code !== 'PGRST116') throw error; 
+        
+        setHoroscope(data);
+      } catch (err) {
+        console.error("Erreur lors de la récupération de l'horoscope:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHoroscope();
+  }, [sign.id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center text-indigo-600">
+        <Loader2 className="animate-spin mb-4" size={40} />
+        <p>Connexion aux astres...</p>
+      </div>
+    );
+  }
+
+  // Si n8n n'a pas encore tourné ou s'il n'y a pas de données pour ce signe
+  if (!horoscope) {
+    return (
+      <div className="max-w-md mx-auto mt-20 text-center p-8 bg-white rounded-3xl border border-slate-100 shadow-sm">
+        <AlertCircle size={48} className="mx-auto text-indigo-300 mb-4" />
+        <h3 className="text-xl font-bold text-slate-800 mb-2">Les astres sont silencieux</h3>
+        <p className="text-slate-500 mb-6">
+          L'horoscope de cette semaine n'est pas encore disponible pour le signe {sign.name}. 
+          Vérifiez que votre robot n8n a bien tourné !
+        </p>
+        <Button onClick={onGoBack} variant="secondary">Choisir un autre signe</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -100,6 +148,8 @@ const ReadingView = ({ sign, session, onGoBack, onSubscribeClick }) => {
       <div className="text-center mb-10">
         <div className="text-6xl mb-4 text-indigo-900">{sign.icon}</div>
         <h2 className="text-3xl font-serif text-slate-900 mb-2">{sign.name}</h2>
+        <p className="text-indigo-600 font-medium">Semaine du {new Date(horoscope.week_start_date).toLocaleDateString()}</p>
+        {isPremium && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold mt-2"><Star size={10}/> MEMBRE PREMIUM</span>}
       </div>
 
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
@@ -107,11 +157,11 @@ const ReadingView = ({ sign, session, onGoBack, onSubscribeClick }) => {
           <div className="flex items-center gap-2 text-xs font-bold text-indigo-500 uppercase tracking-widest mb-4">
             <Sparkles size={14} /><span>Énergies</span>
           </div>
-          <p className="text-slate-700 leading-relaxed text-lg mb-6">{MOCK_HOROSCOPE.intro}</p>
+          <p className="text-slate-700 leading-relaxed text-lg mb-6">{horoscope.intro}</p>
           <h3 className="text-xl font-medium text-slate-900 mb-3 mt-8 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 text-xs">♥</span> Amour
           </h3>
-          <p className="text-slate-600 leading-relaxed">{MOCK_HOROSCOPE.love}</p>
+          <p className="text-slate-600 leading-relaxed">{horoscope.love}</p>
         </div>
 
         <div className="relative">
@@ -119,17 +169,21 @@ const ReadingView = ({ sign, session, onGoBack, onSubscribeClick }) => {
              <h3 className="text-xl font-medium text-slate-900 mb-3 mt-4 flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-500 text-xs">$</span> Travail
             </h3>
-            <p className="text-slate-600 leading-relaxed mb-6">{MOCK_HOROSCOPE.work}</p>
+            <p className="text-slate-600 leading-relaxed mb-6">{horoscope.work}</p>
 
             <div className="bg-indigo-50 rounded-xl p-6 mt-8 border border-indigo-100">
                <h3 className="text-lg font-bold text-indigo-900 mb-4 flex items-center gap-2">
                  <Lock size={16} className={isPremium ? "hidden" : "inline"}/>
                  <span className={!isPremium ? "blur-sm" : ""}>Guide Privé</span>
                </h3>
-               <div className="space-y-4 text-indigo-800">
-                  <p><strong>Conseil :</strong> {MOCK_HOROSCOPE.premium_content.advice}</p>
-                  <p><strong>Numéros :</strong> {MOCK_HOROSCOPE.premium_content.lucky_numbers}</p>
-               </div>
+               {/* Affichage des données JSONB (premium_data) */}
+               {horoscope.premium_data && (
+                 <div className="space-y-4 text-indigo-800">
+                    <p><strong>Conseil :</strong> {horoscope.premium_data.advice}</p>
+                    <p><strong>Numéros :</strong> {horoscope.premium_data.lucky_numbers}</p>
+                    <p><strong>Détails :</strong> {horoscope.premium_data.detailed_forecast}</p>
+                 </div>
+               )}
             </div>
           </div>
 
@@ -138,7 +192,14 @@ const ReadingView = ({ sign, session, onGoBack, onSubscribeClick }) => {
               <div className="text-center p-6 max-w-sm mx-auto animate-fade-in-up">
                 <Lock size={20} className="mx-auto mb-4 text-indigo-600"/>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Débloquez votre destinée</h3>
-                <Button onClick={onSubscribeClick} className="w-full">Connexion requise</Button>
+                {session ? (
+                   <Button onClick={onSubscribeReq} className="w-full gap-2">
+                      <CreditCard size={18} /> S'abonner (2.99€)
+                   </Button>
+                ) : (
+                   <Button onClick={onAuthReq} className="w-full">Connexion requise</Button>
+                )}
+                
               </div>
             </div>
           )}
@@ -148,7 +209,6 @@ const ReadingView = ({ sign, session, onGoBack, onSubscribeClick }) => {
   );
 };
 
-// VUE AUTHENTIFICATION RÉELLE AVEC SUPABASE
 const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -157,22 +217,25 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode }) => {
 
   const handleAuth = async () => {
     if (!supabase) {
-      setError("Erreur de configuration : Les clés Supabase sont manquantes dans le fichier .env");
+      setError("Erreur : Clés Supabase manquantes dans le fichier .env");
       return;
     }
-
     setLoading(true);
     setError(null);
     try {
       if (isLoginMode) {
-        // CONNEXION
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
-        // INSCRIPTION
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        else alert("Compte créé !");
+        const { error: signUpError, data } = await supabase.auth.signUp({ email, password });
+        if (signUpError) throw signUpError;
+        
+        if (data?.user) {
+             // On crée le profil utilisateur par défaut (non premium)
+             const { error: profileError } = await supabase.from('profiles').insert([{ id: data.user.id, is_premium: false }]);
+             // Si le profil existe déjà (cas rare), on ignore l'erreur
+             if (profileError && profileError.code !== '23505') console.error(profileError);
+        }
       }
       onAuthSuccess();
     } catch (err) {
@@ -185,69 +248,46 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode }) => {
   return (
     <div className="flex items-center justify-center min-h-[60vh] px-4">
       <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl w-full max-w-md border border-slate-100">
-        <h2 className="text-2xl font-bold text-slate-900 text-center mb-6">
-          {isLoginMode ? 'Connexion' : 'Inscription'}
-        </h2>
-        
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-100">
-            {error}
-          </div>
-        )}
-
+        <h2 className="text-2xl font-bold text-slate-900 text-center mb-6">{isLoginMode ? 'Connexion' : 'Inscription'}</h2>
+        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">{error}</div>}
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none" 
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Mot de passe</label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none" 
-            />
-          </div>
-          
-          <Button onClick={handleAuth} disabled={loading} className="w-full mt-4">
-            {loading ? <Loader2 className="animate-spin" /> : (isLoginMode ? 'Se connecter' : "S'inscrire")}
-          </Button>
+          <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500"/>
+          <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500"/>
+          <Button onClick={handleAuth} disabled={loading} className="w-full mt-4">{loading ? <Loader2 className="animate-spin"/> : (isLoginMode ? 'Se connecter' : "S'inscrire")}</Button>
         </div>
-
-        <div className="mt-6 text-center text-sm text-slate-500">
-          <button onClick={onSwitchToLogin} className="text-indigo-600 font-medium hover:underline">
-            {isLoginMode ? "Pas de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
-          </button>
-        </div>
+        <div className="mt-6 text-center text-sm"><button onClick={onSwitchToLogin} className="text-indigo-600 font-medium hover:underline">{isLoginMode ? "Créer un compte" : 'Se connecter'}</button></div>
       </div>
     </div>
   );
 };
 
-// --- APP PRINCIPALE ---
-
 export default function App() {
   const [currentView, setCurrentView] = useState('home');
   const [selectedSign, setSelectedSign] = useState(null);
-  const [session, setSession] = useState(null); // VRAIE SESSION SUPABASE
+  const [session, setSession] = useState(null);
+  const [isPremium, setIsPremium] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Vérifier la session au chargement
   useEffect(() => {
     if (!supabase) return;
+    
+    // Fonction pour vérifier si l'utilisateur est premium via la table 'profiles'
+    const checkPremium = async (userId) => {
+      const { data } = await supabase.from('profiles').select('is_premium').eq('id', userId).single();
+      if (data) setIsPremium(data.is_premium);
+    };
 
+    // Vérification initiale
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session?.user) checkPremium(session.user.id);
     });
 
+    // Écoute des changements (connexion/déconnexion)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session?.user) checkPremium(session.user.id);
+      else setIsPremium(false);
     });
 
     return () => subscription.unsubscribe();
@@ -263,6 +303,12 @@ export default function App() {
     setIsMenuOpen(false);
   };
 
+  const handleSubscribe = () => {
+    // Si on a une session, on passe l'ID utilisateur à Stripe
+    const finalLink = session ? `${STRIPE_LINK}?client_reference_id=${session.user.id}` : STRIPE_LINK;
+    window.location.href = finalLink; 
+  };
+
   const Header = () => (
     <nav className="border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -270,24 +316,18 @@ export default function App() {
           <Moon className="text-indigo-600 fill-indigo-600" size={20} />
           <span className="font-serif font-bold text-xl tracking-tight">AstroWeekly</span>
         </div>
-
         <div className="hidden md:flex items-center gap-4">
           {!session ? (
             <button onClick={() => setCurrentView('login')} className="text-indigo-600 font-medium text-sm">Connexion</button>
           ) : (
             <div className="flex items-center gap-3">
-              <span className="text-sm text-slate-600">{session.user.email}</span>
+              {isPremium && <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-full flex items-center gap-1"><Star size={10} fill="currentColor"/> PRO</span>}
               <button onClick={handleLogout} className="p-2 hover:bg-slate-100 rounded-full text-slate-500"><LogOut size={16}/></button>
             </div>
           )}
         </div>
-        
-        {/* Mobile Menu Toggle */}
-        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-slate-600">
-          {isMenuOpen ? <X/> : <Menu/>}
-        </button>
+        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-slate-600">{isMenuOpen ? <X/> : <Menu/>}</button>
       </div>
-
       {isMenuOpen && (
         <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-slate-100 p-4 shadow-lg">
           {!session ? (
@@ -310,8 +350,10 @@ export default function App() {
           <ReadingView 
             sign={selectedSign} 
             session={session} 
+            isPremium={isPremium}
             onGoBack={() => setCurrentView('home')}
-            onSubscribeClick={() => setCurrentView('login')}
+            onAuthReq={() => setCurrentView('login')}
+            onSubscribeReq={handleSubscribe}
           />
         )}
 
