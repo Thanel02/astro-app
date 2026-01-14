@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-// Remplacez par votre lien Stripe (Mode Test)
+// Ton lien Stripe (Vérifie bien que c'est le lien "buy.stripe.com/test_...")
 const STRIPE_LINK = "https://buy.stripe.com/test_28EaEW7n8gVEaXTa9o4AU00"; 
 
 // Récupération des clés depuis le fichier .env
@@ -270,7 +270,6 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode }) => {
   );
 };
 
-// --- LE POINT IMPORTANT EST ICI : EXPORT DEFAULT ---
 export default function App() {
   const [currentView, setCurrentView] = useState('home');
   const [selectedSign, setSelectedSign] = useState(null);
@@ -278,27 +277,45 @@ export default function App() {
   const [isPremium, setIsPremium] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // FONCTION MAGIQUE : Vérification de l'abonnement
   useEffect(() => {
     if (!supabase) return;
-    
+
+    // Fonction pour vérifier le statut une fois
     const checkPremium = async (userId) => {
       const { data } = await supabase.from('profiles').select('is_premium').eq('id', userId).single();
-      if (data) setIsPremium(data.is_premium);
+      if (data && data.is_premium) {
+        setIsPremium(true);
+        // On sauvegarde en local pour éviter les clignotements
+        localStorage.setItem('astro_premium', 'true');
+      }
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) checkPremium(session.user.id);
-    });
-
+    // 1. On écoute les changements de connexion (Login/Logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session?.user) checkPremium(session.user.id);
-      else setIsPremium(false);
+      if (session?.user) {
+        checkPremium(session.user.id);
+      } else {
+        setIsPremium(false);
+        localStorage.removeItem('astro_premium');
+      }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    // 2. AUTO-REFRESH : Si l'utilisateur est connecté mais pas encore Premium, on vérifie toutes les 4 sec
+    // C'est ça qui permet de débloquer sans recharger la page !
+    const interval = setInterval(() => {
+      if (session?.user && !isPremium) {
+        console.log("Vérification abonnement...");
+        checkPremium(session.user.id);
+      }
+    }, 4000); // Toutes les 4 secondes
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(interval); // On nettoie le timer quand on quitte
+    };
+  }, [session, isPremium]); // Se relance si la session ou le statut change
 
   const handleSelectSign = (sign) => {
     setSelectedSign(sign);
@@ -308,6 +325,8 @@ export default function App() {
   const handleLogout = async () => {
     if (supabase) await supabase.auth.signOut();
     setIsMenuOpen(false);
+    setIsPremium(false);
+    localStorage.removeItem('astro_premium');
   };
 
   const handleSubscribe = () => {
