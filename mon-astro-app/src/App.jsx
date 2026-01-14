@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
   Star, Moon, Sun, Lock, ChevronRight, User, Check, Sparkles, 
-  ArrowLeft, Menu, X, LogOut, Loader2, CreditCard, AlertCircle, AlertTriangle, Settings, UserCircle
+  ArrowLeft, Menu, X, LogOut, Loader2, CreditCard, AlertCircle, AlertTriangle, Settings 
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-// 1. Ton lien de PAIEMENT (celui que tu avais déjà)
+
+// 1. Ton lien de PAIEMENT (Celui qui commence par buy.stripe.com...)
 const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/test_28EaEW7n8gVEaXTa9o4AU00"; 
 
-// 2. Ton lien de PORTAIL CLIENT (celui que tu viens de copier dans les paramètres Stripe)
-// Exemple : https://billing.stripe.com/p/login/test_...
+// 2. Ton lien de PORTAIL CLIENT (Celui qui commence par billing.stripe.com...)
 const STRIPE_PORTAL_LINK = "https://billing.stripe.com/p/login/test_28EaEW7n8gVEaXTa9o4AU00";
 
 // Récupération des clés depuis le fichier .env
@@ -225,7 +225,7 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
   );
 };
 
-// --- NOUVELLE VUE : PROFIL ---
+// --- VUE PROFIL (Corrigée avec l'icône standard) ---
 const ProfileView = ({ session, isPremium, onLogout, onHome, onManageSub }) => {
   return (
     <div className="max-w-xl mx-auto px-4 py-12">
@@ -235,7 +235,7 @@ const ProfileView = ({ session, isPremium, onLogout, onHome, onManageSub }) => {
 
       <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 text-center">
         <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-600">
-          <UserCircle size={40} />
+          <User size={40} />
         </div>
         
         <h2 className="text-2xl font-bold text-slate-900 mb-1">Mon Compte</h2>
@@ -337,6 +337,7 @@ export default function App() {
   useEffect(() => {
     if (!supabase) return;
 
+    // Vérifie le statut Premium
     const checkPremium = async (userId) => {
       const { data } = await supabase.from('profiles').select('is_premium').eq('id', userId).single();
       if (data && data.is_premium) {
@@ -345,6 +346,7 @@ export default function App() {
       }
     };
 
+    // Gestion de la session (Connexion / Déconnexion)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
@@ -355,6 +357,7 @@ export default function App() {
       }
     });
 
+    // Auto-refresh pour débloquer le contenu après paiement (toutes les 4 sec)
     const interval = setInterval(() => {
       if (session?.user && !isPremium) {
         checkPremium(session.user.id);
@@ -374,15 +377,13 @@ export default function App() {
 
   const handleLogout = async () => {
     if (supabase) await supabase.auth.signOut();
-    setCurrentView('home'); // Retour à l'accueil
+    setCurrentView('home'); 
     setIsMenuOpen(false);
     setIsPremium(false);
     localStorage.removeItem('astro_premium');
   };
 
-  // Nouvelle fonction pour envoyer vers le portail
   const handleManageSubscription = () => {
-    // On peut pré-remplir l'email dans l'URL pour faciliter la vie de l'user
     if (session?.user?.email) {
        window.location.href = `${STRIPE_PORTAL_LINK}?prefilled_email=${encodeURIComponent(session.user.email)}`;
     } else {
@@ -408,7 +409,6 @@ export default function App() {
           ) : (
             <div className="flex items-center gap-3">
               {isPremium && <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-full flex items-center gap-1"><Star size={10} fill="currentColor"/> PRO</span>}
-              {/* Bouton Profil à la place du logout direct */}
               <button onClick={() => setCurrentView('profile')} className="p-2 hover:bg-slate-100 rounded-full text-slate-500 hover:text-indigo-600 transition-colors">
                 <User size={20}/>
               </button>
@@ -449,7 +449,6 @@ export default function App() {
           />
         )}
 
-        {/* Vue Profil */}
         {currentView === 'profile' && (
           <ProfileView 
              session={session}
