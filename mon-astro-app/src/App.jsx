@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
   Star, Moon, Sun, Lock, ChevronRight, User, Check, Sparkles, 
-  ArrowLeft, Menu, X, LogOut, Loader2, CreditCard, AlertCircle, AlertTriangle 
+  ArrowLeft, Menu, X, LogOut, Loader2, CreditCard, AlertCircle, AlertTriangle, Settings, UserCircle
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-// Ton lien Stripe (Vérifie bien que c'est le lien "buy.stripe.com/test_...")
-const STRIPE_LINK = "https://buy.stripe.com/test_28EaEW7n8gVEaXTa9o4AU00"; 
+// 1. Ton lien de PAIEMENT (celui que tu avais déjà)
+const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/test_28EaEW7n8gVEaXTa9o4AU00"; 
+
+// 2. Ton lien de PORTAIL CLIENT (celui que tu viens de copier dans les paramètres Stripe)
+// Exemple : https://billing.stripe.com/p/login/test_...
+const STRIPE_PORTAL_LINK = "https://billing.stripe.com/p/login/test_28EaEW7n8gVEaXTa9o4AU00";
 
 // Récupération des clés depuis le fichier .env
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -42,7 +46,8 @@ const Button = ({ children, onClick, variant = 'primary', className = '', disabl
     primary: "bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400",
     secondary: "bg-white text-indigo-900 border border-indigo-100 hover:border-indigo-300",
     outline: "border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50",
-    ghost: "text-slate-500 hover:text-indigo-600 hover:bg-slate-50"
+    ghost: "text-slate-500 hover:text-indigo-600 hover:bg-slate-50",
+    danger: "bg-red-50 text-red-600 hover:bg-red-100 border border-red-100"
   };
 
   return (
@@ -220,6 +225,58 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
   );
 };
 
+// --- NOUVELLE VUE : PROFIL ---
+const ProfileView = ({ session, isPremium, onLogout, onHome, onManageSub }) => {
+  return (
+    <div className="max-w-xl mx-auto px-4 py-12">
+      <button onClick={onHome} className="flex items-center text-slate-400 hover:text-indigo-600 mb-8 transition-colors">
+        <ArrowLeft size={18} className="mr-2" /> Retour
+      </button>
+
+      <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 text-center">
+        <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-600">
+          <UserCircle size={40} />
+        </div>
+        
+        <h2 className="text-2xl font-bold text-slate-900 mb-1">Mon Compte</h2>
+        <p className="text-slate-500 mb-6">{session?.user?.email}</p>
+
+        <div className="inline-block px-4 py-2 rounded-xl bg-slate-50 border border-slate-100 mb-8">
+           <span className="text-sm font-medium text-slate-600">Statut : </span>
+           {isPremium ? (
+             <span className="text-sm font-bold text-amber-600 flex items-center gap-1 inline-flex ml-2">
+               <Star size={14} fill="currentColor"/> PREMIUM ACTIF
+             </span>
+           ) : (
+             <span className="text-sm font-bold text-slate-500 ml-2">GRATUIT</span>
+           )}
+        </div>
+
+        <div className="space-y-4">
+          {isPremium ? (
+             <Button onClick={onManageSub} variant="outline" className="w-full gap-2">
+               <Settings size={18}/> Gérer mon abonnement
+             </Button>
+          ) : (
+             <Button onClick={() => window.location.href = STRIPE_PAYMENT_LINK} className="w-full gap-2">
+               <Star size={18}/> Passer Premium
+             </Button>
+          )}
+          
+          <Button onClick={onLogout} variant="danger" className="w-full gap-2">
+             <LogOut size={18}/> Se déconnecter
+          </Button>
+        </div>
+
+        <div className="mt-8 pt-8 border-t border-slate-50 text-xs text-slate-400">
+          <p>Besoin d'aide ? Répondez simplement à cet email.</p>
+          <p className="mt-2">ID: {session?.user?.id.slice(0, 8)}...</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -277,21 +334,17 @@ export default function App() {
   const [isPremium, setIsPremium] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // FONCTION MAGIQUE : Vérification de l'abonnement
   useEffect(() => {
     if (!supabase) return;
 
-    // Fonction pour vérifier le statut une fois
     const checkPremium = async (userId) => {
       const { data } = await supabase.from('profiles').select('is_premium').eq('id', userId).single();
       if (data && data.is_premium) {
         setIsPremium(true);
-        // On sauvegarde en local pour éviter les clignotements
         localStorage.setItem('astro_premium', 'true');
       }
     };
 
-    // 1. On écoute les changements de connexion (Login/Logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
@@ -302,20 +355,17 @@ export default function App() {
       }
     });
 
-    // 2. AUTO-REFRESH : Si l'utilisateur est connecté mais pas encore Premium, on vérifie toutes les 4 sec
-    // C'est ça qui permet de débloquer sans recharger la page !
     const interval = setInterval(() => {
       if (session?.user && !isPremium) {
-        console.log("Vérification abonnement...");
         checkPremium(session.user.id);
       }
-    }, 4000); // Toutes les 4 secondes
+    }, 4000); 
 
     return () => {
       subscription.unsubscribe();
-      clearInterval(interval); // On nettoie le timer quand on quitte
+      clearInterval(interval);
     };
-  }, [session, isPremium]); // Se relance si la session ou le statut change
+  }, [session, isPremium]);
 
   const handleSelectSign = (sign) => {
     setSelectedSign(sign);
@@ -324,13 +374,24 @@ export default function App() {
 
   const handleLogout = async () => {
     if (supabase) await supabase.auth.signOut();
+    setCurrentView('home'); // Retour à l'accueil
     setIsMenuOpen(false);
     setIsPremium(false);
     localStorage.removeItem('astro_premium');
   };
 
+  // Nouvelle fonction pour envoyer vers le portail
+  const handleManageSubscription = () => {
+    // On peut pré-remplir l'email dans l'URL pour faciliter la vie de l'user
+    if (session?.user?.email) {
+       window.location.href = `${STRIPE_PORTAL_LINK}?prefilled_email=${encodeURIComponent(session.user.email)}`;
+    } else {
+       window.location.href = STRIPE_PORTAL_LINK;
+    }
+  };
+
   const handleSubscribe = () => {
-    const finalLink = session ? `${STRIPE_LINK}?client_reference_id=${session.user.id}` : STRIPE_LINK;
+    const finalLink = session ? `${STRIPE_PAYMENT_LINK}?client_reference_id=${session.user.id}` : STRIPE_PAYMENT_LINK;
     window.location.href = finalLink; 
   };
 
@@ -347,7 +408,10 @@ export default function App() {
           ) : (
             <div className="flex items-center gap-3">
               {isPremium && <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-full flex items-center gap-1"><Star size={10} fill="currentColor"/> PRO</span>}
-              <button onClick={handleLogout} className="p-2 hover:bg-slate-100 rounded-full text-slate-500"><LogOut size={16}/></button>
+              {/* Bouton Profil à la place du logout direct */}
+              <button onClick={() => setCurrentView('profile')} className="p-2 hover:bg-slate-100 rounded-full text-slate-500 hover:text-indigo-600 transition-colors">
+                <User size={20}/>
+              </button>
             </div>
           )}
         </div>
@@ -358,7 +422,10 @@ export default function App() {
           {!session ? (
             <Button onClick={() => { setCurrentView('login'); setIsMenuOpen(false); }} className="w-full">Connexion</Button>
           ) : (
+            <>
+             <Button onClick={() => { setCurrentView('profile'); setIsMenuOpen(false); }} variant="outline" className="w-full mb-2">Mon Profil</Button>
              <Button onClick={handleLogout} variant="ghost" className="w-full">Se déconnecter</Button>
+            </>
           )}
         </div>
       )}
@@ -379,6 +446,17 @@ export default function App() {
             onGoBack={() => setCurrentView('home')}
             onAuthReq={() => setCurrentView('login')}
             onSubscribeReq={handleSubscribe}
+          />
+        )}
+
+        {/* Vue Profil */}
+        {currentView === 'profile' && (
+          <ProfileView 
+             session={session}
+             isPremium={isPremium}
+             onLogout={handleLogout}
+             onHome={() => setCurrentView('home')}
+             onManageSub={handleManageSubscription}
           />
         )}
 
