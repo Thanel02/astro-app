@@ -8,8 +8,9 @@ import {
 
 // --- CONFIGURATION ---
 const STRIPE_LINK = "https://buy.stripe.com/test_28EaEW7n8gVEaXTa9o4AU00"; 
-// REMPLACE CECI PAR TON NOUVEAU WEBHOOK N8N SPÉCIAL CHAT
-const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook/chat-voyance"; 
+
+// ✅ MODIFICATION ICI : On utilise l'URL de TEST pour le développement
+const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook-test/chat-voyance"; 
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -82,7 +83,7 @@ const Card = ({ children, className = '', onClick }) => (
   </div>
 );
 
-// --- VUES HOROSCOPE (EXISTANTES) ---
+// --- VUES ---
 
 const HomeView = ({ onSelectSign }) => (
   <div className="max-w-5xl mx-auto px-4 py-8 pb-24">
@@ -164,11 +165,11 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
         {/* PREMIUM SECTION */}
         <div className="relative p-6 bg-slate-50 border-t border-slate-100">
            <div className={!isPremium ? "blur-sm opacity-50 select-none" : ""}>
-              <h3 className="font-bold text-indigo-900 mb-3 flex items-center gap-2"><Lock size={14} className={isPremium ? "hidden" : "inline"}/> Secrets Astraux</h3>
-              <div className="space-y-2 text-sm text-indigo-800">
+             <h3 className="font-bold text-indigo-900 mb-3 flex items-center gap-2"><Lock size={14} className={isPremium ? "hidden" : "inline"}/> Secrets Astraux</h3>
+             <div className="space-y-2 text-sm text-indigo-800">
                  <p><strong>Couleur :</strong> {horoscope.premium_data?.color}</p>
                  <p><strong>Numéros :</strong> {Array.isArray(horoscope.premium_data?.lucky_numbers) ? horoscope.premium_data?.lucky_numbers.join(', ') : "..."}</p>
-              </div>
+             </div>
            </div>
            
            {!isPremium && (
@@ -215,7 +216,6 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  // Compteur local pour l'UX immédiate (le vrai check se fait coté n8n/serveur)
   const [msgCount, setMsgCount] = useState(0); 
   const messagesEndRef = useRef(null);
 
@@ -230,8 +230,8 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
     
     // Check limite locale
     if (!isPremium && msgCount >= 3) {
-      // On ne bloque pas ici pour laisser l'UI afficher le paywall proprement via le state
-      // Mais on peut afficher une alerte si on veut
+      // Bloqué par l'UI locale
+      return; // On arrête ici si la limite est atteinte
     }
 
     const userMsg = input;
@@ -240,10 +240,14 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
     setLoading(true);
 
     try {
-      // Envoi au Webhook n8n
+      console.log("🚀 Envoi vers n8n...", { message: userMsg, userId: session?.user?.id || 'anonymous' });
+
       const response = await fetch(N8N_CHAT_WEBHOOK, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json' 
+        },
         body: JSON.stringify({
           message: userMsg,
           userId: session?.user?.id || 'anonymous',
@@ -252,19 +256,45 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
         })
       });
 
-      const data = await response.json();
+      console.log("📡 Statut HTTP:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`Erreur technique (${response.status})`);
+      }
+
+      // ✅ CORRECTION ROBUSTE POUR LIRE LA RÉPONSE
+      const textData = await response.text();
+      console.log("📦 Réponse brute:", textData);
+
+      let data = {};
+      try {
+        data = JSON.parse(textData);
+      } catch (jsonError) {
+        // Si ce n'est pas du JSON, on considère que c'est du texte brut
+        data = { text: textData };
+      }
 
       if (data.error === "LIMIT_REACHED") {
-        setMsgCount(3); // Force l'affichage du paywall
+        setMsgCount(3); 
         setMessages(prev => [...prev, { role: 'system', content: "LIMIT_REACHED" }]);
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.response || data.output || "Les astres sont silencieux..." }]);
+        // On cherche la réponse dans toutes les propriétés possibles
+        // Cela permet d'éviter les erreurs si n8n change de format
+        const reply = data.response || data.output || data.text || data.message || (typeof data === 'string' ? data : "Je n'ai pas compris la réponse des astres.");
+        
+        // Si c'est un objet complexe Google (parts...), on essaie de l'extraire
+        if (typeof reply === 'object') {
+           setMessages(prev => [...prev, { role: 'assistant', content: "Format de réponse complexe reçu." }]);
+        } else {
+           setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+        }
+
         if (!isPremium) setMsgCount(prev => prev + 1);
       }
 
     } catch (e) {
-      console.error(e);
-      setMessages(prev => [...prev, { role: 'assistant', content: "Une perturbation cosmique empêche la connexion. Réessayez." }]);
+      console.error("💥 ERREUR CRITIQUE:", e);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Une perturbation cosmique empêche la connexion. (Vérifiez que le workflow n8n écoute bien)" }]);
     } finally {
       setLoading(false);
     }
@@ -292,7 +322,7 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
       {/* Zone Messages */}
       <div className="flex-1 overflow-y-auto space-y-4 px-2 pb-4">
         {messages.map((m, i) => {
-          if (m.role === 'system' && m.content === "LIMIT_REACHED") return null; // Géré par le paywall overlay
+          if (m.role === 'system' && m.content === "LIMIT_REACHED") return null; 
           return (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${
@@ -353,7 +383,7 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
   );
 };
 
-// --- AUTH VIEW (EXISTANT - LÉGÈREMENT MODIFIÉ POUR LE RETOUR) ---
+// --- AUTH VIEW (EXISTANT) ---
 
 const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => {
   const [email, setEmail] = useState('');
@@ -397,33 +427,46 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
 // --- APP PRINCIPALE ---
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('horoscope'); // 'horoscope' | 'voyance'
-  const [viewState, setViewState] = useState('list'); // 'list' | 'detail' | 'auth'
+  const [activeTab, setActiveTab] = useState('horoscope'); 
+  const [viewState, setViewState] = useState('list'); 
   
   const [selectedSign, setSelectedSign] = useState(null);
   const [selectedPsychic, setSelectedPsychic] = useState(null);
   
   const [session, setSession] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // const [isMenuOpen, setIsMenuOpen] = useState(false); // Pas utilisé pour l'instant
 
-  // Gestion Session & Premium (Identique à avant)
+  // ✅ CORRECTION ICI : Gestion Session & Premium NETTOYÉE (Plus de boucle infinie)
   useEffect(() => {
     if (!supabase) return;
+
+    // Fonction de vérification unique
     const checkPremium = async (userId) => {
       const { data } = await supabase.from('profiles').select('is_premium').eq('id', userId).single();
-      if (data?.is_premium) { setIsPremium(true); localStorage.setItem('astro_premium', 'true'); }
+      if (data?.is_premium) { 
+          setIsPremium(true); 
+          localStorage.setItem('astro_premium', 'true'); 
+      }
     };
+
+    // On écoute les changements d'auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, sess) => {
       setSession(sess);
-      if (sess?.user) checkPremium(sess.user.id);
-      else { setIsPremium(false); localStorage.removeItem('astro_premium'); }
+      if (sess?.user) {
+         // On ne vérifie qu'une seule fois au login, pas en boucle
+         checkPremium(sess.user.id);
+      } else { 
+         setIsPremium(false); 
+         localStorage.removeItem('astro_premium'); 
+      }
     });
-    const interval = setInterval(() => { if (session?.user && !isPremium) checkPremium(session.user.id); }, 4000);
-    return () => { subscription.unsubscribe(); clearInterval(interval); };
-  }, [session, isPremium]);
 
-  const handleLogout = async () => { if (supabase) await supabase.auth.signOut(); setIsMenuOpen(false); };
+    // Nettoyage propre
+    return () => { subscription.unsubscribe(); };
+  }, []); // [] = ne s'exécute qu'une fois au démarrage
+
+  const handleLogout = async () => { if (supabase) await supabase.auth.signOut(); };
   const handleSubscribe = () => window.location.href = session ? `${STRIPE_LINK}?client_reference_id=${session.user.id}` : STRIPE_LINK;
 
   // Navigation Logic
@@ -467,7 +510,7 @@ export default function App() {
         {renderContent()}
       </main>
 
-      {/* Tab Bar Navigation (Style Mobile App) */}
+      {/* Tab Bar Navigation */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 h-16 flex items-center justify-around z-50 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <button 
           onClick={() => { setActiveTab('horoscope'); setViewState('list'); }} 
