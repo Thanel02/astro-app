@@ -10,7 +10,7 @@ import {
 const STRIPE_LINK = "https://buy.stripe.com/test_28EaEW7n8gVEaXTa9o4AU00"; 
 
 // ✅ MODIFICATION ICI : On utilise l'URL de TEST pour le développement
-const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook-test/chat-voyance"; 
+const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook/chat-voyance"; 
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
