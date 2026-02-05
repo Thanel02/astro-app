@@ -228,10 +228,8 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
   const handleSend = async () => {
     if (!input.trim()) return;
     
-    // Check limite locale
     if (!isPremium && msgCount >= 3) {
-      // Bloqué par l'UI locale
-      return; // On arrête ici si la limite est atteinte
+      return; 
     }
 
     const userMsg = input;
@@ -240,8 +238,6 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
     setLoading(true);
 
     try {
-      console.log("🚀 Envoi vers n8n...", { message: userMsg, userId: session?.user?.id || 'anonymous' });
-
       const response = await fetch(N8N_CHAT_WEBHOOK, {
         method: 'POST',
         headers: { 
@@ -256,21 +252,13 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
         })
       });
 
-      console.log("📡 Statut HTTP:", response.status);
+      if (!response.ok) throw new Error(`Erreur technique (${response.status})`);
 
-      if (!response.ok) {
-        throw new Error(`Erreur technique (${response.status})`);
-      }
-
-      // ✅ CORRECTION ROBUSTE POUR LIRE LA RÉPONSE
       const textData = await response.text();
-      console.log("📦 Réponse brute:", textData);
-
       let data = {};
       try {
         data = JSON.parse(textData);
       } catch (jsonError) {
-        // Si ce n'est pas du JSON, on considère que c'est du texte brut
         data = { text: textData };
       }
 
@@ -278,23 +266,13 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
         setMsgCount(3); 
         setMessages(prev => [...prev, { role: 'system', content: "LIMIT_REACHED" }]);
       } else {
-        // On cherche la réponse dans toutes les propriétés possibles
-        // Cela permet d'éviter les erreurs si n8n change de format
         const reply = data.response || data.output || data.text || data.message || (typeof data === 'string' ? data : "Je n'ai pas compris la réponse des astres.");
-        
-        // Si c'est un objet complexe Google (parts...), on essaie de l'extraire
-        if (typeof reply === 'object') {
-           setMessages(prev => [...prev, { role: 'assistant', content: "Format de réponse complexe reçu." }]);
-        } else {
-           setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
-        }
-
+        setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
         if (!isPremium) setMsgCount(prev => prev + 1);
       }
 
     } catch (e) {
-      console.error("💥 ERREUR CRITIQUE:", e);
-      setMessages(prev => [...prev, { role: 'assistant', content: "Une perturbation cosmique empêche la connexion. (Vérifiez que le workflow n8n écoute bien)" }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Une perturbation cosmique empêche la connexion." }]);
     } finally {
       setLoading(false);
     }
@@ -304,7 +282,6 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
 
   return (
     <div className="max-w-2xl mx-auto h-[calc(100vh-140px)] flex flex-col pt-4 px-2">
-      {/* Header Chat */}
       <div className="flex items-center gap-4 border-b border-slate-100 pb-4 mb-4">
         <button onClick={onGoBack} className="p-2 hover:bg-slate-100 rounded-full"><ArrowLeft size={20}/></button>
         <div className="flex items-center gap-3">
@@ -319,7 +296,6 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
         </div>
       </div>
 
-      {/* Zone Messages */}
       <div className="flex-1 overflow-y-auto space-y-4 px-2 pb-4">
         {messages.map((m, i) => {
           if (m.role === 'system' && m.content === "LIMIT_REACHED") return null; 
@@ -347,7 +323,6 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area ou Paywall */}
       <div className="p-4 bg-white border-t border-slate-100">
         {showPaywall ? (
           <div className="text-center p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
@@ -383,7 +358,7 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
   );
 };
 
-// --- AUTH VIEW (EXISTANT) ---
+// --- AUTH VIEW ---
 
 const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => {
   const [email, setEmail] = useState('');
@@ -416,9 +391,15 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
         <div className="space-y-4">
           <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500"/>
           <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500"/>
-          <Button onClick={handleAuth} disabled={loading} className="w-full mt-4">{loading ? <Loader2 className="animate-spin"/> : (isLoginMode ? 'Valider' : "S'inscrire")}</Button>
+          <Button onClick={handleAuth} disabled={loading} className="w-full mt-4">
+            {loading ? <Loader2 className="animate-spin"/> : (isLoginMode ? 'Se connecter' : "S'inscrire")}
+          </Button>
         </div>
-        <div className="mt-6 text-center text-sm"><button onClick={onSwitchToLogin} className="text-indigo-600 font-medium">{isLoginMode ? "Créer un compte" : 'Se connecter'}</button></div>
+        <div className="mt-6 text-center text-sm">
+          <button onClick={onSwitchToLogin} className="text-indigo-600 font-medium">
+            {isLoginMode ? "Pas de compte ? Créer un compte" : 'Déjà inscrit ? Se connecter'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -429,19 +410,17 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
 export default function App() {
   const [activeTab, setActiveTab] = useState('horoscope'); 
   const [viewState, setViewState] = useState('list'); 
+  const [isLoginMode, setIsLoginMode] = useState(true); // Gère le mode de l'AuthView
   
   const [selectedSign, setSelectedSign] = useState(null);
   const [selectedPsychic, setSelectedPsychic] = useState(null);
   
   const [session, setSession] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
-  // const [isMenuOpen, setIsMenuOpen] = useState(false); // Pas utilisé pour l'instant
 
-  // ✅ CORRECTION ICI : Gestion Session & Premium NETTOYÉE (Plus de boucle infinie)
   useEffect(() => {
     if (!supabase) return;
 
-    // Fonction de vérification unique
     const checkPremium = async (userId) => {
       const { data } = await supabase.from('profiles').select('is_premium').eq('id', userId).single();
       if (data?.is_premium) { 
@@ -450,11 +429,9 @@ export default function App() {
       }
     };
 
-    // On écoute les changements d'auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, sess) => {
       setSession(sess);
       if (sess?.user) {
-         // On ne vérifie qu'une seule fois au login, pas en boucle
          checkPremium(sess.user.id);
       } else { 
          setIsPremium(false); 
@@ -462,46 +439,47 @@ export default function App() {
       }
     });
 
-    // Nettoyage propre
     return () => { subscription.unsubscribe(); };
-  }, []); // [] = ne s'exécute qu'une fois au démarrage
+  }, []);
 
   const handleLogout = async () => { if (supabase) await supabase.auth.signOut(); };
   const handleSubscribe = () => window.location.href = session ? `${STRIPE_LINK}?client_reference_id=${session.user.id}` : STRIPE_LINK;
 
-  // Navigation Logic
-  const goToAuth = () => setViewState('auth');
+  const goToAuth = (loginMode = true) => {
+    setIsLoginMode(loginMode);
+    setViewState('auth');
+  };
+
   const goHome = () => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); };
 
   const renderContent = () => {
     if (viewState === 'auth') {
       return <AuthView 
-        isLoginMode={true} 
+        isLoginMode={isLoginMode} 
         onAuthSuccess={goHome} 
-        onSwitchToLogin={() => {}} 
+        onSwitchToLogin={() => setIsLoginMode(!isLoginMode)} 
         onCancel={goHome}
       />;
     }
 
     if (activeTab === 'horoscope') {
-      if (selectedSign) return <ReadingView sign={selectedSign} session={session} isPremium={isPremium} onGoBack={() => setSelectedSign(null)} onAuthReq={goToAuth} onSubscribeReq={handleSubscribe} />;
+      if (selectedSign) return <ReadingView sign={selectedSign} session={session} isPremium={isPremium} onGoBack={() => setSelectedSign(null)} onAuthReq={() => goToAuth(true)} onSubscribeReq={handleSubscribe} />;
       return <HomeView onSelectSign={setSelectedSign} />;
     }
 
     if (activeTab === 'voyance') {
-      if (selectedPsychic) return <ChatView psychic={selectedPsychic} session={session} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAuthReq={goToAuth} onSubscribeReq={handleSubscribe} />;
+      if (selectedPsychic) return <ChatView psychic={selectedPsychic} session={session} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAuthReq={() => goToAuth(true)} onSubscribeReq={handleSubscribe} />;
       return <PsychicSelectionView onSelectPsychic={setSelectedPsychic} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-20">
-      {/* Header Mobile simplifié */}
       <nav className="bg-white/80 backdrop-blur border-b border-slate-100 sticky top-0 z-50 h-16 flex items-center justify-between px-4">
          <div className="font-serif font-bold text-xl tracking-tight text-indigo-900">Astro<span className="text-indigo-600">Weekly</span></div>
          <div className="flex items-center gap-3">
             {isPremium && <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-full border border-amber-200">PREMIUM</span>}
-            {!session && <button onClick={goToAuth} className="text-sm font-medium text-indigo-600">Connexion</button>}
+            {!session && <button onClick={() => goToAuth(true)} className="text-sm font-medium text-indigo-600">Connexion</button>}
             {session && <button onClick={handleLogout}><LogOut size={18} className="text-slate-400"/></button>}
          </div>
       </nav>
@@ -510,7 +488,6 @@ export default function App() {
         {renderContent()}
       </main>
 
-      {/* Tab Bar Navigation */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 h-16 flex items-center justify-around z-50 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <button 
           onClick={() => { setActiveTab('horoscope'); setViewState('list'); }} 
