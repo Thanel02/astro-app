@@ -40,9 +40,9 @@ const ZODIAC_SIGNS = [
 ];
 
 const VOYANTES = [
-  { id: 'alma', name: 'Mère Alma', desc: 'La sagesse ancestrale. Elle lit dans les racines de votre passé.', style: 'Bienveillante, maternelle.', image: '🌿', message: "Bonjour mon enfant... Je ressens une onde particulière vous concernant. Puis-je vous éclairer ?" },
-  { id: 'luna', name: 'Luna Star', desc: 'Astrologue moderne. Directe et connectée aux cycles lunaires.', style: 'Dynamique, précise.', image: '🔮', message: "Hey ! Ton ciel bouge énormément en ce moment. Tu veux savoir ce que les planètes te préparent ?" },
-  { id: 'cosmos', name: 'Oracle X', desc: 'Une conscience quantique qui analyse les probabilités.', style: 'Mystérieux, profond.', image: '🌌', message: "Analyse fréquentielle terminée. Votre futur proche présente une bifurcation. Voulez-vous voir ?" }
+  { id: 'alma', name: 'Mère Alma', desc: 'La sagesse ancestrale.', style: 'Bienveillante.', image: '🌿' },
+  { id: 'luna', name: 'Luna Star', desc: 'Astrologue moderne.', style: 'Dynamique.', image: '🔮' },
+  { id: 'cosmos', name: 'Oracle X', desc: 'Conscience quantique.', style: 'Mystérieux.', image: '🌌' }
 ];
 
 // --- COMPOSANTS UI ---
@@ -90,13 +90,7 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
       setLoading(true);
       try {
         if (!supabase) return;
-        const { data, error } = await supabase
-          .from('weekly_horoscopes')
-          .select('*')
-          .eq('sign_id', sign.name) 
-          .order('week_start_date', { ascending: false }) 
-          .limit(1)
-          .single();
+        const { data, error } = await supabase.from('weekly_horoscopes').select('*').eq('sign_id', sign.name).order('week_start_date', { ascending: false }).limit(1).single();
         if (!error) setHoroscope(data);
       } catch (err) { console.error(err); } finally { setLoading(false); }
     };
@@ -289,65 +283,39 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
 
-  // LOGIQUE NOTIFICATION
-  const [showNotification, setShowNotification] = useState(false);
+  // LOGIQUE BULLE DE CHAT
+  const [showBubble, setShowBubble] = useState(false);
   const [randomPsychic, setRandomPsychic] = useState(null);
 
   useEffect(() => {
-    // Choisir une voyante au hasard pour la notification
-    const psychic = VOYANTES[Math.floor(Math.random() * VOYANTES.length)];
-    setRandomPsychic(psychic);
-
-    // Faire apparaître la bulle après 5 secondes
-    const timer = setTimeout(() => {
-      // On ne l'affiche que si l'utilisateur est sur l'accueil et n'a pas encore choisi
-      setShowNotification(true);
-    }, 5000);
-
+    setRandomPsychic(VOYANTES[Math.floor(Math.random() * VOYANTES.length)]);
+    const timer = setTimeout(() => setShowBubble(true), 5000);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     if (!supabase) return;
-
     const fetchPremiumStatus = async (userId) => {
       const { data } = await supabase.from('profiles').select('is_premium').eq('id', userId).single();
       if (data) setIsPremium(data.is_premium);
     };
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, sess) => {
       setSession(sess);
       if (sess?.user) {
         await fetchPremiumStatus(sess.user.id);
-        
-        const channel = supabase
-          .channel('schema-db-changes')
-          .on('postgres_changes', { 
-            event: 'UPDATE', 
-            schema: 'public', 
-            table: 'profiles', 
-            filter: `id=eq.${sess.user.id}` 
-          }, (payload) => {
-            if (payload.new) setIsPremium(payload.new.is_premium);
-          })
-          .subscribe();
-
+        const channel = supabase.channel('schema-db-changes').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${sess.user.id}` }, (payload) => {
+          if (payload.new) setIsPremium(payload.new.is_premium);
+        }).subscribe();
         return () => { supabase.removeChannel(channel); };
-      } else {
-        setIsPremium(false);
-      }
+      } else { setIsPremium(false); }
     });
-
     return () => { subscription.unsubscribe(); };
   }, []);
 
   const handleLogout = async () => { if (supabase) await supabase.auth.signOut(); };
-
   const handleSubscribe = () => {
     const returnUrl = window.location.origin;
-    window.location.href = session 
-      ? `${STRIPE_LINK}?client_reference_id=${session.user.id}&return_url=${encodeURIComponent(returnUrl)}` 
-      : STRIPE_LINK;
+    window.location.href = session ? `${STRIPE_LINK}?client_reference_id=${session.user.id}&return_url=${encodeURIComponent(returnUrl)}` : STRIPE_LINK;
   };
 
   const goToAuth = (loginMode = true) => { setIsLoginMode(loginMode); setViewState('auth'); };
@@ -365,8 +333,11 @@ export default function App() {
     }
   };
 
+  // On affiche la bulle uniquement si on n'est pas déjà en train de chatter
+  const canShowBubble = showBubble && activeTab === 'horoscope' && !selectedSign && viewState === 'list';
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-20 overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-20">
       <nav className="bg-white/80 backdrop-blur border-b border-slate-100 sticky top-0 z-50 h-16 flex items-center justify-between px-4">
          <div className="font-serif font-bold text-xl tracking-tight text-indigo-900">Astro<span className="text-indigo-600">Weekly</span></div>
          <div className="flex items-center gap-3">
@@ -375,41 +346,25 @@ export default function App() {
             {session && <button onClick={handleLogout}><LogOut size={18} className="text-slate-400"/></button>}
          </div>
       </nav>
-
+      
       <main className="pt-4">{renderContent()}</main>
 
-      {/* BULLE DE TCHAT FLOTTANTE (NOTIFICATION) */}
-      {showNotification && activeTab === 'horoscope' && !selectedSign && viewState !== 'auth' && (
-        <div className="fixed bottom-24 right-4 left-4 md:left-auto md:w-80 z-[60] animate-in slide-in-from-bottom-5 fade-in duration-500">
-          <div className="bg-white rounded-2xl shadow-2xl border border-indigo-100 overflow-hidden">
-            <div className="bg-indigo-600 p-3 flex items-center justify-between text-white">
-              <div className="flex items-center gap-2">
-                <Bell size={16} className="animate-bounce" />
-                <span className="text-xs font-bold uppercase tracking-wider">Message Spirituel</span>
-              </div>
-              <button onClick={() => setShowNotification(false)} className="hover:bg-indigo-500 rounded-full p-1"><X size={16}/></button>
-            </div>
-            <div className="p-4 flex items-start gap-3">
-              <div className="text-4xl bg-indigo-50 p-2 rounded-full">{randomPsychic?.image}</div>
-              <div className="flex-1">
-                <p className="font-bold text-slate-800 text-sm mb-1">{randomPsychic?.name}</p>
-                <p className="text-slate-600 text-xs italic leading-relaxed">"{randomPsychic?.message}"</p>
-              </div>
-            </div>
-            <div className="p-3 bg-slate-50 border-t border-slate-100">
-              <button 
-                onClick={() => {
-                  setActiveTab('voyance');
-                  setSelectedPsychic(randomPsychic);
-                  setShowNotification(false);
-                }}
-                className="w-full bg-indigo-600 text-white text-xs font-bold py-2 rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
-              >
-                Répondre à {randomPsychic?.name} <ChevronRight size={14}/>
-              </button>
-            </div>
+      {/* BULLE DE CHAT DISCRÈTE */}
+      {canShowBubble && (
+        <button 
+          onClick={() => { setActiveTab('voyance'); setSelectedPsychic(randomPsychic); setShowBubble(false); }}
+          className="fixed bottom-20 right-6 z-[60] flex items-center gap-2 group animate-in slide-in-from-bottom-4 duration-500"
+        >
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-xl border border-slate-100 text-xs font-medium text-slate-600 hidden md:block">
+            Besoin d'un conseil ? ✨
           </div>
-        </div>
+          <div className="relative">
+            <div className="w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-500 flex items-center justify-center text-3xl hover:scale-110 transition-transform">
+              {randomPsychic?.image}
+            </div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
+          </div>
+        </button>
       )}
 
       <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 h-16 flex items-center justify-around z-50 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
