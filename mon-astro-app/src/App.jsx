@@ -13,13 +13,14 @@ const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook/chat-voya
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Configuration renforcée pour iPhone/Safari
 const supabase = (supabaseUrl && supabaseKey) 
   ? createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true
+        detectSessionInUrl: true,
+        storageKey: 'voyance-auth-token',
+        storage: window.localStorage
       }
     })
   : null;
@@ -41,9 +42,9 @@ const ZODIAC_SIGNS = [
 ];
 
 const VOYANTES = [
-  { id: 'alma', name: 'Mère Alma', desc: 'La sagesse ancestrale. Elle lit dans les racines de votre passé.', style: 'Bienveillante, maternelle.', image: '🌿' },
-  { id: 'luna', name: 'Luna Star', desc: 'Astrologue moderne. Directe et connectée aux cycles lunaires.', style: 'Dynamique, précise.', image: '🔮' },
-  { id: 'cosmos', name: 'Oracle X', desc: 'Une conscience quantique qui analyse les probabilités.', style: 'Mystérieux, profond.', image: '🌌' }
+  { id: 'alma', name: 'Mère Alma', desc: 'La sagesse ancestrale. Elle lit dans les racines de votre passé.', style: 'Bienveillante, maternelle.', image: '🌿', intro: "Bonjour mon enfant. Je ressens une énergie particulière autour de vous aujourd'hui... Souhaitez-vous que nous explorions votre chemin ensemble ?" },
+  { id: 'luna', name: 'Luna Star', desc: 'Astrologue moderne. Directe et connectée aux cycles lunaires.', style: 'Dynamique, précise.', image: '🔮', intro: "Coucou ! Les astres bougent vite en ce moment. J'ai analysé votre ciel, il y a des choses intéressantes à voir. On commence ?" },
+  { id: 'cosmos', name: 'Oracle X', desc: 'Une conscience quantique qui analyse les probabilités.', style: 'Mystérieux, profond.', image: '🌌', intro: "Connexion établie. Votre fréquence vibratoire suggère des questionnements profonds. Interrogez-moi." }
 ];
 
 // --- COMPOSANTS UI ---
@@ -165,28 +166,53 @@ const PsychicSelectionView = ({ onSelectPsychic }) => (
   </div>
 );
 
+// --- VUE CHAT AMÉLIORÉE ---
 const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAuthReq }) => {
-  const [messages, setMessages] = useState([{ role: 'assistant', content: `Bonjour, je suis ${psychic.name}. Que souhaitez-vous savoir ?` }]);
+  // Le message d'accueil est vide au début pour simuler une arrivée
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [msgCount, setMsgCount] = useState(0); 
   const messagesEndRef = useRef(null);
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  // Effet pour scroller automatiquement vers le bas
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isTyping]);
+
+  // Effet pour simuler le message d'accueil de la voyante après 1 seconde
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsTyping(true);
+      setTimeout(() => {
+        setMessages([{ role: 'assistant', content: psychic.intro, time: new Date().toLocaleTimeString([], {hour: '2h', minute: '2min'}) }]);
+        setIsTyping(false);
+      }, 1500);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [psychic]);
 
   const handleSend = async () => {
     if (!input.trim() || (!isPremium && msgCount >= 3)) return;
     const userMsg = input;
+    const time = new Date().toLocaleTimeString([], {hour: '2h', minute: '2min'});
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    setMessages(prev => [...prev, { role: 'user', content: userMsg, time }]);
+    
     setLoading(true);
+    setIsTyping(true);
 
     try {
       const response = await fetch(N8N_CHAT_WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg, userId: session?.user?.id || 'anonymous', voyanteId: psychic.id, isPremium })
+        body: JSON.stringify({ 
+          message: userMsg, 
+          userId: session?.user?.id || 'anonymous', 
+          voyanteId: psychic.id, 
+          isPremium 
+        })
       });
+      
       const textData = await response.text();
       let data = {};
       try { data = JSON.parse(textData); } catch { data = { text: textData }; }
@@ -195,45 +221,88 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
         setMsgCount(3);
       } else {
         const reply = data.response || data.output || data.text || "Les astres sont silencieux...";
-        setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: reply, time: new Date().toLocaleTimeString([], {hour: '2h', minute: '2min'}) }]);
         if (!isPremium) setMsgCount(prev => prev + 1);
       }
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Une perturbation cosmique empêche la connexion." }]);
-    } finally { setLoading(false); }
+      setMessages(prev => [...prev, { role: 'assistant', content: "Une perturbation cosmique empêche la connexion.", time }]);
+    } finally { 
+      setLoading(false); 
+      setIsTyping(false);
+    }
   };
 
   const showPaywall = !isPremium && msgCount >= 3;
 
   return (
-    <div className="max-w-2xl mx-auto h-[calc(100vh-140px)] flex flex-col pt-4 px-2">
-      <div className="flex items-center gap-4 border-b border-slate-100 pb-4 mb-4">
-        <button onClick={onGoBack} className="p-2 hover:bg-slate-100 rounded-full"><ArrowLeft size={20}/></button>
-        <div className="flex items-center gap-3">
-          <div className="text-3xl bg-slate-50 p-2 rounded-full">{psychic.image}</div>
-          <div><h3 className="font-bold text-slate-800">{psychic.name}</h3><div className="text-xs text-green-600 font-medium">En ligne</div></div>
+    <div className="max-w-2xl mx-auto h-[calc(100vh-80px)] md:h-[calc(100vh-120px)] flex flex-col bg-white md:rounded-3xl md:my-4 md:shadow-2xl overflow-hidden border border-slate-100">
+      {/* Header du Chat */}
+      <div className="flex items-center gap-3 p-4 bg-indigo-600 text-white shadow-md">
+        <button onClick={onGoBack} className="p-1 hover:bg-white/20 rounded-full transition-colors"><ArrowLeft size={24}/></button>
+        <div className="relative">
+          <div className="text-3xl bg-white/20 p-1.5 rounded-full backdrop-blur-sm border border-white/30">{psychic.image}</div>
+          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-indigo-600 rounded-full"></div>
         </div>
-        <div className="ml-auto">{!isPremium && <span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">{3 - msgCount} questions</span>}</div>
+        <div className="flex-1">
+          <h3 className="font-bold leading-none">{psychic.name}</h3>
+          <span className="text-[10px] opacity-80 uppercase tracking-widest font-semibold">En consultation</span>
+        </div>
+        {!isPremium && (
+          <div className="text-[10px] bg-white/20 px-2 py-1 rounded-lg border border-white/20">
+            {3 - msgCount} crédits
+          </div>
+        )}
       </div>
-      <div className="flex-1 overflow-y-auto space-y-4 px-2 pb-4">
+
+      {/* Zone des messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
         {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-4 rounded-2xl text-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-none shadow-sm'}`}>{m.content}</div>
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+            <div className={`max-w-[85%] relative ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-none' : 'bg-white text-slate-800 rounded-2xl rounded-tl-none shadow-sm border border-slate-100'}`}>
+              <div className="p-3 text-sm leading-relaxed">{m.content}</div>
+              <div className={`px-3 pb-1.5 text-[9px] ${m.role === 'user' ? 'text-indigo-200 text-right' : 'text-slate-400'}`}>{m.time}</div>
+            </div>
           </div>
         ))}
-        {loading && <div className="flex justify-start"><div className="bg-slate-50 p-3 rounded-2xl flex gap-1"><span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span><span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100"></span></div></div>}
+        
+        {/* Bulle d'écriture "..." */}
+        {isTyping && (
+          <div className="flex justify-start animate-pulse">
+            <div className="bg-white border border-slate-100 p-3 rounded-2xl rounded-tl-none shadow-sm flex gap-1">
+              <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span>
+              <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-150"></span>
+              <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-300"></span>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
-      <div className="p-4 bg-white border-t border-slate-100">
+
+      {/* Barre d'envoi */}
+      <div className="p-4 bg-white border-t border-slate-100 pb-safe">
         {showPaywall ? (
-          <div className="text-center p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
-            <Lock className="mx-auto text-indigo-600 mb-2" /><h3 className="font-bold text-indigo-900 mb-1">Limite atteinte</h3>
-            <Button onClick={session ? onSubscribeReq : onAuthReq} className="w-full py-2 text-sm">Débloquer (2.99€)</Button>
+          <div className="text-center p-4 bg-indigo-50 rounded-2xl border border-indigo-100 animate-in zoom-in duration-300">
+            <Lock className="mx-auto text-indigo-600 mb-2" size={24}/>
+            <h3 className="font-bold text-indigo-900 mb-1">Session limitée</h3>
+            <p className="text-xs text-slate-500 mb-3">Passez en Premium pour continuer votre échange avec {psychic.name}.</p>
+            <Button onClick={session ? onSubscribeReq : onAuthReq} className="w-full py-2.5 text-sm">Débloquer (2.99€)</Button>
           </div>
         ) : (
-          <div className="flex gap-2">
-            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Posez votre question..." className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-5 py-3 outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-            <button onClick={handleSend} disabled={loading || !input.trim()} className="bg-indigo-600 text-white p-3 rounded-full hover:bg-indigo-700 shadow-md"><Send size={20} /></button>
+          <div className="flex items-center gap-2 bg-slate-100 rounded-full p-1.5 pr-2 focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+            <input 
+              value={input} 
+              onChange={e => setInput(e.target.value)} 
+              onKeyDown={e => e.key === 'Enter' && handleSend()} 
+              placeholder="Écrivez votre message..." 
+              className="flex-1 bg-transparent border-none outline-none px-4 py-2 text-sm text-slate-700" 
+            />
+            <button 
+              onClick={handleSend} 
+              disabled={loading || !input.trim() || isTyping} 
+              className="bg-indigo-600 text-white p-2.5 rounded-full hover:bg-indigo-700 disabled:bg-slate-300 shadow-lg transition-transform active:scale-90"
+            >
+              <Send size={18} />
+            </button>
           </div>
         )}
       </div>
@@ -326,7 +395,6 @@ export default function App() {
 
   const handleLogout = async () => { if (supabase) await supabase.auth.signOut(); };
 
-  // CORRECTION ICI : Ajout du return_url pour iPhone
   const handleSubscribe = () => {
     const returnUrl = window.location.origin;
     window.location.href = session 
@@ -351,22 +419,31 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-20">
-      <nav className="bg-white/80 backdrop-blur border-b border-slate-100 sticky top-0 z-50 h-16 flex items-center justify-between px-4">
-         <div className="font-serif font-bold text-xl tracking-tight text-indigo-900">Astro<span className="text-indigo-600">Weekly</span></div>
+      {/* Navbar mobile plus discrète */}
+      <nav className="bg-white border-b border-slate-100 sticky top-0 z-50 h-14 flex items-center justify-between px-4">
+         <div className="font-serif font-bold text-lg tracking-tight text-indigo-900">Astro<span className="text-indigo-600">Weekly</span></div>
          <div className="flex items-center gap-3">
-            {isPremium && <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-full border border-amber-200">PREMIUM</span>}
-            {!session && <button onClick={() => goToAuth(true)} className="text-sm font-medium text-indigo-600">Connexion</button>}
-            {session && <button onClick={handleLogout}><LogOut size={18} className="text-slate-400"/></button>}
+            {isPremium && <span className="text-[10px] font-bold bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full border border-amber-100">PREMIUM</span>}
+            {!session && <button onClick={() => goToAuth(true)} className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Se connecter</button>}
+            {session && <button onClick={handleLogout} className="p-1.5 hover:bg-slate-50 rounded-full"><LogOut size={16} className="text-slate-400"/></button>}
          </div>
       </nav>
-      <main className="pt-4">{renderContent()}</main>
-      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 h-16 flex items-center justify-around z-50 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <button onClick={() => { setActiveTab('horoscope'); setViewState('list'); }} className={`flex flex-col items-center gap-1 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}>
-          <Moon size={24} fill={activeTab === 'horoscope' ? "currentColor" : "none"} /><span className="text-[10px] font-medium">Horoscope</span>
+
+      <main>{renderContent()}</main>
+
+      {/* Barre de navigation basse (Bottom Nav) */}
+      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-100 h-16 flex items-center justify-around z-50 pb-safe shadow-lg">
+        <button onClick={() => { setActiveTab('horoscope'); setViewState('list'); }} className={`flex flex-col items-center gap-1 w-1/2 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}>
+          <div className={`p-1 rounded-xl ${activeTab === 'horoscope' ? 'bg-indigo-50' : ''}`}>
+            <Moon size={22} fill={activeTab === 'horoscope' ? "currentColor" : "none"} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-tight">Horoscope</span>
         </button>
-        <div className="w-px h-8 bg-slate-100"></div>
-        <button onClick={() => { setActiveTab('voyance'); setViewState('list'); }} className={`flex flex-col items-center gap-1 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}>
-          <Sparkles size={24} fill={activeTab === 'voyance' ? "currentColor" : "none"} /><span className="text-[10px] font-medium">Voyance AI</span>
+        <button onClick={() => { setActiveTab('voyance'); setViewState('list'); }} className={`flex flex-col items-center gap-1 w-1/2 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}>
+          <div className={`p-1 rounded-xl ${activeTab === 'voyance' ? 'bg-indigo-50' : ''}`}>
+            <Sparkles size={22} fill={activeTab === 'voyance' ? "currentColor" : "none"} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-tight">Voyance IA</span>
         </button>
       </div>
     </div>
