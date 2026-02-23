@@ -13,8 +13,15 @@ const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook/chat-voya
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Configuration renforcée pour iPhone/Safari
 const supabase = (supabaseUrl && supabaseKey) 
-  ? createClient(supabaseUrl, supabaseKey)
+  ? createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    })
   : null;
 
 // --- CONSTANTES ---
@@ -283,7 +290,6 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
 
-  // --- LOGIQUE DE SYNCHRONISATION PREMIUM ---
   useEffect(() => {
     if (!supabase) return;
 
@@ -297,7 +303,6 @@ export default function App() {
       if (sess?.user) {
         await fetchPremiumStatus(sess.user.id);
         
-        // Ecoute en temps réel de la base de données pour débloquer sans refresh
         const channel = supabase
           .channel('schema-db-changes')
           .on('postgres_changes', { 
@@ -320,10 +325,12 @@ export default function App() {
   }, []);
 
   const handleLogout = async () => { if (supabase) await supabase.auth.signOut(); };
+
+  // CORRECTION ICI : Ajout du return_url pour iPhone
   const handleSubscribe = () => {
     const returnUrl = window.location.origin;
     window.location.href = session 
-      ? `${STRIPE_LINK}?client_reference_id=${session.user.id}&return_url=${returnUrl}` 
+      ? `${STRIPE_LINK}?client_reference_id=${session.user.id}&return_url=${encodeURIComponent(returnUrl)}` 
       : STRIPE_LINK;
   };
 
