@@ -25,47 +25,47 @@ const supabase = (supabaseUrl && supabaseKey)
 
 // --- CONSTANTES ---
 const ZODIAC_SIGNS = [
-  { id: 'belier', name: 'Bélier', dates: '21 Mars - 19 Avril', element: 'Feu', icon: '♈' },
-  { id: 'taureau', name: 'Taureau', dates: '20 Avril - 20 Mai', element: 'Terre', icon: '♉' },
-  { id: 'gemeaux', name: 'Gémeaux', dates: '21 Mai - 20 Juin', element: 'Air', icon: '♊' },
-  { id: 'cancer', name: 'Cancer', dates: '21 Juin - 22 Juillet', element: 'Eau', icon: '♋' },
-  { id: 'lion', name: 'Lion', dates: '23 Juillet - 22 Août', element: 'Feu', icon: '♌' },
-  { id: 'vierge', name: 'Vierge', dates: '23 Août - 22 Septembre', element: 'Terre', icon: '♍' },
-  { id: 'balance', name: 'Balance', dates: '23 Septembre - 22 Octobre', element: 'Air', icon: '♎' },
-  { id: 'scorpion', name: 'Scorpion', dates: '23 Octobre - 21 Novembre', element: 'Eau', icon: '♏' },
-  { id: 'sagittaire', name: 'Sagittaire', dates: '22 Novembre - 21 Décembre', element: 'Feu', icon: '♐' },
-  { id: 'capricorne', name: 'Capricorne', dates: '22 Décembre - 19 Janvier', element: 'Terre', icon: '♑' },
-  { id: 'verseau', name: 'Verseau', dates: '20 Janvier - 18 Février', element: 'Air', icon: '♒' },
-  { id: 'poissons', name: 'Poissons', dates: '19 Février - 20 Mars', element: 'Eau', icon: '♓' },
+  { id: 'belier', name: 'Bélier', icon: '♈' },
+  { id: 'taureau', name: 'Taureau', icon: '♉' },
+  { id: 'gemeaux', name: 'Gémeaux', icon: '♊' },
+  { id: 'cancer', name: 'Cancer', icon: '♋' },
+  { id: 'lion', name: 'Lion', icon: '♌' },
+  { id: 'vierge', name: 'Vierge', icon: '♍' },
+  { id: 'balance', name: 'Balance', icon: '♎' },
+  { id: 'scorpion', name: 'Scorpion', icon: '♏' },
+  { id: 'sagittaire', name: 'Sagittaire', icon: '♐' },
+  { id: 'capricorne', name: 'Capricorne', icon: '♑' },
+  { id: 'verseau', name: 'Verseau', icon: '♒' },
+  { id: 'poissons', name: 'Poissons', icon: '♓' },
 ];
 
 const VOYANTES = [
   { 
-    id: 'alma', 
-    name: 'Mère Alma', 
-    desc: 'Don de naissance. Elle lit dans les énergies de votre passé.', 
-    style: 'Bienveillante, maternelle.', 
-    image: '🌿', 
-    hook: "J'ai un ressenti pour vous...", 
-    welcome: "Bonjour mon enfant. Je ressens une vibration très forte autour de vous aujourd'hui... Puis-je vous dire ce que je vois ?" 
+    id: 'francoise', 
+    name: 'Françoise', 
+    desc: 'Médium pur de naissance. Capte les messages de vos guides sans support.', 
+    style: 'Sincère et sans complaisance.', 
+    image: '🕯️', 
+    hook: "On me transmet un message pour vous...", 
+    welcome: "Bonjour, je suis Françoise. Je ressens une interrogation profonde en vous. Je vous écoute pour éclairer votre chemin." 
   },
   { 
-    id: 'luna', 
-    name: 'Luna Star', 
-    desc: 'Tarologue et astrologue. Spécialiste du domaine sentimental.', 
-    style: 'Directe, chaleureuse.', 
-    image: '🔮', 
-    hook: "Une question vous préoccupe ?", 
-    welcome: "Coucou ! Je finis de tirer les cartes et j'ai une surprise pour vous. On regarde ensemble votre avenir ?" 
+    id: 'nathalie', 
+    name: 'Nathalie', 
+    desc: 'Cartomancienne experte. Spécialiste du Grand Tarot de Marseille et de l\'Amour.', 
+    style: 'Chaleureuse et précise.', 
+    image: '🃏', 
+    hook: "Vos cartes viennent de tomber...", 
+    welcome: "Bienvenue dans mon salon. Mes cartes sont prêtes à répondre à vos doutes les plus secrets. Que voulez-vous savoir ?" 
   },
   { 
-    id: 'cosmos', 
-    name: 'Oracle X', 
-    desc: 'Médium pur. Capte les flashs et les messages de l’au-delà.', 
-    style: 'Mystérieux, précis.', 
-    image: '🌌', 
-    hook: "Le destin vous appelle...", 
-    welcome: "Bienvenue. Votre chemin semble s'éclaircir, mais un obstacle persiste. Souhaitez-vous lever le voile ?" 
+    id: 'pierre', 
+    name: 'Maître Pierre', 
+    desc: 'Astrologue et Numérologue. Analyse vos cycles de vie et vos blocages.', 
+    style: 'Analytique et pédagogue.', 
+    image: '📜', 
+    hook: "Votre ciel astral bouge aujourd'hui...", 
+    welcome: "Bonjour. L'étude de vos astres révèle une période charnière. Posons les chiffres pour comprendre ce qui arrive." 
   }
 ];
 
@@ -76,7 +76,6 @@ const Button = ({ children, onClick, variant = 'primary', className = '', disabl
     primary: "bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400",
     secondary: "bg-white text-indigo-900 border border-indigo-100 hover:border-indigo-300",
     outline: "border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50",
-    ghost: "text-slate-500 hover:text-indigo-600 hover:bg-slate-50"
   };
   return <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>{children}</button>;
 };
@@ -91,14 +90,14 @@ const Card = ({ children, className = '', onClick }) => (
 const HomeView = ({ onSelectSign }) => (
   <div className="max-w-5xl mx-auto px-4 py-8 pb-24">
     <div className="text-center mb-10 space-y-2">
-      <h1 className="text-3xl md:text-4xl font-serif text-slate-900">Horoscope de la Semaine</h1>
-      <p className="text-slate-500 italic">Découvrez ce que les astres ont prévu pour vous</p>
+      <h1 className="text-3xl md:text-4xl font-serif text-slate-900 font-bold">Horoscope Hebdomadaire</h1>
+      <p className="text-slate-500 italic">Consultez les prévisions de nos astrologues</p>
     </div>
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {ZODIAC_SIGNS.map((sign) => (
         <Card key={sign.id} onClick={() => onSelectSign(sign)} className="cursor-pointer group hover:border-indigo-200 flex flex-col items-center justify-center text-center py-6">
           <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{sign.icon}</div>
-          <h3 className="font-medium text-slate-800">{sign.name}</h3>
+          <h3 className="font-semibold text-slate-800">{sign.name}</h3>
         </Card>
       ))}
     </div>
@@ -122,38 +121,38 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
   }, [sign.name]);
 
   if (loading) return <div className="min-h-[50vh] flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" size={30} /></div>;
-  if (!horoscope) return <div className="p-8 text-center"><p className="text-slate-500 mb-4">Prévisions indisponibles.</p><Button onClick={onGoBack} variant="secondary">Retour</Button></div>;
+  if (!horoscope) return <div className="p-8 text-center"><p className="text-slate-500 mb-4">Prévisions momentanément indisponibles.</p><Button onClick={onGoBack} variant="secondary">Retour</Button></div>;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
       <button onClick={onGoBack} className="flex items-center text-slate-400 hover:text-indigo-600 mb-6"><ArrowLeft size={18} className="mr-2" /> Retour</button>
       <div className="text-center mb-8">
         <div className="text-5xl mb-2">{sign.icon}</div>
-        <h2 className="text-3xl font-serif text-slate-900">{sign.name}</h2>
-        <p className="text-indigo-600 text-sm font-medium">Période du {new Date(horoscope.week_start_date).toLocaleDateString()}</p>
+        <h2 className="text-3xl font-serif text-slate-900 font-bold">{sign.name}</h2>
+        <p className="text-indigo-600 text-sm font-medium">Semaine du {new Date(horoscope.week_start_date).toLocaleDateString()}</p>
       </div>
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-6">
-          <p className="text-slate-700 leading-relaxed mb-6 italic">"{horoscope.intro}"</p>
+          <p className="text-slate-700 leading-relaxed mb-6 italic text-lg">"{horoscope.intro}"</p>
           <div className="space-y-6">
-             <div><h3 className="font-bold text-rose-500 mb-1">♥ Côté Cœur</h3><p className="text-slate-600 text-sm leading-relaxed">{horoscope.love}</p></div>
-             <div><h3 className="font-bold text-emerald-600 mb-1">☼ Vie Professionnelle</h3><p className="text-slate-600 text-sm leading-relaxed">{horoscope.work}</p></div>
+             <div><h3 className="font-bold text-rose-600 mb-1 border-b border-rose-100 pb-1">Climat Sentimental</h3><p className="text-slate-600 text-sm leading-relaxed">{horoscope.love}</p></div>
+             <div><h3 className="font-bold text-emerald-700 mb-1 border-b border-emerald-100 pb-1">Vie Professionnelle</h3><p className="text-slate-600 text-sm leading-relaxed">{horoscope.work}</p></div>
           </div>
         </div>
         <div className="relative p-6 bg-slate-50 border-t border-slate-100">
            <div className={!isPremium ? "blur-sm opacity-50 select-none" : ""}>
-             <h3 className="font-bold text-indigo-900 mb-3 flex items-center gap-2"><Lock size={14} className={isPremium ? "hidden" : "inline"}/> Vos Signes de Chance</h3>
+             <h3 className="font-bold text-indigo-900 mb-3 flex items-center gap-2">Numérologie & Chance</h3>
              <div className="space-y-2 text-sm text-indigo-800">
-                 <p><strong>Couleur fétiche :</strong> {horoscope.premium_data?.color}</p>
-                 <p><strong>Chiffres de chance :</strong> {Array.isArray(horoscope.premium_data?.lucky_numbers) ? horoscope.premium_data?.lucky_numbers.join(', ') : "..."}</p>
+                 <p><strong>Couleur vibratoire :</strong> {horoscope.premium_data?.color}</p>
+                 <p><strong>Chiffres clés :</strong> {Array.isArray(horoscope.premium_data?.lucky_numbers) ? horoscope.premium_data?.lucky_numbers.join(', ') : "..."}</p>
              </div>
            </div>
            {!isPremium && (
              <div className="absolute inset-0 flex items-center justify-center p-4">
-               <div className="bg-white/90 backdrop-blur rounded-xl p-5 shadow-lg text-center w-full max-w-xs">
+               <div className="bg-white/90 backdrop-blur rounded-xl p-5 shadow-lg text-center w-full max-w-xs border border-indigo-100">
                  <Lock className="mx-auto text-indigo-500 mb-2" size={20}/>
-                 <p className="text-xs text-slate-500 mb-3">Découvrez vos numéros et conseils exclusifs.</p>
-                 <Button onClick={session ? onSubscribeReq : onAuthReq} className="w-full text-xs py-2 h-auto">Débloquer</Button>
+                 <p className="text-xs text-slate-500 mb-3 font-medium">Accédez à vos conseils personnalisés et vos chiffres de chance.</p>
+                 <Button onClick={session ? onSubscribeReq : onAuthReq} className="w-full text-xs py-2 h-auto">Débloquer mon accès</Button>
                </div>
              </div>
            )}
@@ -166,16 +165,17 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
 const PsychicSelectionView = ({ onSelectPsychic }) => (
   <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
     <div className="text-center mb-10 space-y-2">
-      <h1 className="text-3xl md:text-4xl font-serif text-slate-900">Le Salon de Voyance</h1>
-      <p className="text-slate-500">Nos experts sont à votre écoute</p>
+      <h1 className="text-3xl md:text-4xl font-serif text-slate-900 font-bold">Consultation Privée</h1>
+      <p className="text-slate-500">Choisissez l'expert qui saura vous guider</p>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {VOYANTES.map((p) => (
         <Card key={p.id} onClick={() => onSelectPsychic(p)} className="cursor-pointer hover:border-indigo-300 text-center relative overflow-hidden group">
-          <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform duration-500">{p.image}</div>
-          <h3 className="text-xl font-bold text-slate-800 mb-2">{p.name}</h3>
-          <p className="text-sm text-slate-500 mb-4 leading-relaxed">{p.desc}</p>
-          <div className="text-xs font-medium text-indigo-600 bg-indigo-50 py-1 px-3 rounded-full inline-block">{p.style}</div>
+          <div className="text-6xl mb-4 transform group-hover:scale-105 transition-transform duration-500">{p.image}</div>
+          <h3 className="text-xl font-bold text-slate-800 mb-1">{p.name}</h3>
+          <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-3">{p.style}</p>
+          <p className="text-sm text-slate-500 leading-relaxed mb-4">{p.desc}</p>
+          <div className="text-xs font-medium text-slate-400 border border-slate-200 py-1 px-4 rounded-full inline-block">Disponible</div>
         </Card>
       ))}
     </div>
@@ -211,12 +211,12 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
       if (data.error === "LIMIT_REACHED") {
         setMsgCount(3);
       } else {
-        const reply = data.response || data.output || data.text || "Les cartes restent silencieuses... Reposez votre question.";
+        const reply = data.response || data.output || data.text || "La connexion est instable, reposez votre question s'il vous plaît.";
         setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
         if (!isPremium) setMsgCount(prev => prev + 1);
       }
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "La connexion est perturbée... Merci de réessayer dans un instant." }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Une erreur est survenue lors de la consultation." }]);
     } finally { setLoading(false); }
   };
 
@@ -227,30 +227,30 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
       <div className="flex items-center gap-4 border-b border-slate-100 pb-4 mb-4">
         <button onClick={onGoBack} className="p-2 hover:bg-slate-100 rounded-full"><ArrowLeft size={20}/></button>
         <div className="flex items-center gap-3">
-          <div className="text-3xl bg-slate-50 p-2 rounded-full">{psychic.image}</div>
-          <div><h3 className="font-bold text-slate-800">{psychic.name}</h3><div className="text-xs text-green-600 font-medium italic">En ligne</div></div>
+          <div className="text-3xl bg-slate-50 p-2 rounded-full border border-slate-100">{psychic.image}</div>
+          <div><h3 className="font-bold text-slate-800">{psychic.name}</h3><div className="text-[10px] text-green-500 font-bold flex items-center gap-1 uppercase"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Consultation en cours</div></div>
         </div>
-        <div className="ml-auto">{!isPremium && <span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">{3 - msgCount} questions offertes</span>}</div>
+        <div className="ml-auto">{!isPremium && <span className="text-[10px] bg-slate-100 px-2 py-1 rounded font-bold text-slate-400 uppercase">{3 - msgCount} q. gratuites</span>}</div>
       </div>
       <div className="flex-1 overflow-y-auto space-y-4 px-2 pb-4">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-none shadow-sm'}`}>{m.content}</div>
+            <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-none'}`}>{m.content}</div>
           </div>
         ))}
-        {loading && <div className="flex justify-start"><div className="bg-slate-50 p-3 rounded-2xl flex gap-1"><span className="w-2 h-2 bg-indigo-300 rounded-full animate-bounce"></span><span className="w-2 h-2 bg-indigo-300 rounded-full animate-bounce delay-100"></span></div></div>}
+        {loading && <div className="flex justify-start"><div className="bg-white border border-slate-100 p-3 rounded-2xl flex gap-1 shadow-sm"><span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce"></span><span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce delay-100"></span><span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce delay-200"></span></div></div>}
         <div ref={messagesEndRef} />
       </div>
       <div className="p-4 bg-white border-t border-slate-100">
         {showPaywall ? (
-          <div className="text-center p-4 bg-indigo-50 rounded-2xl border border-indigo-100 animate-in zoom-in duration-300">
-            <Lock className="mx-auto text-indigo-600 mb-2" /><h3 className="font-bold text-indigo-900 mb-1">Consultation terminée</h3>
-            <p className="text-xs text-slate-500 mb-3">Pour continuer cet échange sans limite, profitez de notre accès illimité.</p>
-            <Button onClick={session ? onSubscribeReq : onAuthReq} className="w-full py-2 text-sm">Continuer la consultation</Button>
+          <div className="text-center p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+            <h3 className="font-bold text-indigo-900 mb-1">Poursuivez cette consultation</h3>
+            <p className="text-xs text-slate-500 mb-3">Vos 3 questions gratuites ont été épuisées.</p>
+            <Button onClick={session ? onSubscribeReq : onAuthReq} className="w-full py-2 text-sm uppercase tracking-wide">Accès illimité</Button>
           </div>
         ) : (
           <div className="flex gap-2">
-            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Posez votre question à l'expert..." className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-5 py-3 outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner" />
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Ecrivez votre message ici..." className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-5 py-3 outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner" />
             <button onClick={handleSend} disabled={loading || !input.trim()} className="bg-indigo-600 text-white p-3 rounded-full hover:bg-indigo-700 shadow-md transition-transform active:scale-90"><Send size={20} /></button>
           </div>
         )}
@@ -285,14 +285,14 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
     <div className="flex items-center justify-center min-h-[60vh] px-4">
       <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-100 relative">
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={20}/></button>
-        <h2 className="text-2xl font-bold text-center mb-6">{isLoginMode ? 'Ravie de vous revoir' : 'Créez votre profil'}</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 font-serif">{isLoginMode ? 'Espace Membre' : 'Créer un compte'}</h2>
         {error && <div className="bg-red-50 text-red-600 p-3 rounded text-sm mb-4">{error}</div>}
         <div className="space-y-4">
-          <input type="email" placeholder="Adresse Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500 shadow-sm"/>
+          <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500 shadow-sm"/>
           <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500 shadow-sm"/>
-          <Button onClick={handleAuth} disabled={loading} className="w-full mt-4">{loading ? <Loader2 className="animate-spin"/> : (isLoginMode ? 'Accéder au Salon' : "Je m'inscris")}</Button>
+          <Button onClick={handleAuth} disabled={loading} className="w-full mt-4 uppercase tracking-wider">{loading ? <Loader2 className="animate-spin"/> : (isLoginMode ? 'Se connecter' : "Valider mon inscription")}</Button>
         </div>
-        <div className="mt-6 text-center text-sm"><button onClick={onSwitchToLogin} className="text-indigo-600 font-medium">{isLoginMode ? "Nouveau ici ? Créer un compte" : 'Déjà inscrit ? Connectez-vous'}</button></div>
+        <div className="mt-6 text-center text-sm"><button onClick={onSwitchToLogin} className="text-indigo-600 font-medium underline">{isLoginMode ? "Nouveau membre ? S'inscrire" : 'Déjà inscrit ? Connexion'}</button></div>
       </div>
     </div>
   );
@@ -362,45 +362,45 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-20">
-      <nav className="bg-white/80 backdrop-blur border-b border-slate-100 sticky top-0 z-50 h-16 flex items-center justify-between px-4">
-         <div className="font-serif font-bold text-xl tracking-tight text-indigo-900">Astro<span className="text-indigo-600">Weekly</span></div>
+      <nav className="bg-white border-b border-slate-100 sticky top-0 z-50 h-16 flex items-center justify-between px-4">
+         <div className="font-serif font-bold text-xl tracking-tight text-indigo-900">Astro<span className="text-indigo-600">Pure</span></div>
          <div className="flex items-center gap-3">
-            {isPremium && <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-full border border-amber-200">ACCÈS PREMIUM</span>}
-            {!session && <button onClick={() => goToAuth(true)} className="text-sm font-medium text-indigo-600">Se connecter</button>}
-            {session && <button onClick={handleLogout} title="Déconnexion"><LogOut size={18} className="text-slate-400"/></button>}
+            {isPremium && <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-100 uppercase">Abonné</span>}
+            {!session && <button onClick={() => goToAuth(true)} className="text-sm font-semibold text-indigo-600 underline">Espace Membre</button>}
+            {session && <button onClick={handleLogout} className="p-2 bg-slate-50 rounded-full text-slate-400 hover:text-slate-600 transition-colors"><LogOut size={18}/></button>}
          </div>
       </nav>
       
-      <main className="pt-4">{renderContent()}</main>
+      <main className="pt-2">{renderContent()}</main>
 
-      {/* BULLE DE CHAT STYLE NOTIFICATION CLASSIQUE */}
+      {/* BULLE DE CHAT NOTIFICATION */}
       {canShowNotif && (
-        <div className="fixed bottom-20 right-4 z-[60] flex items-end gap-2 animate-in slide-in-from-bottom-5 duration-500">
-          <div className="relative bg-white shadow-2xl border border-slate-100 rounded-2xl rounded-br-none p-3 max-w-[190px] mb-8">
-            <p className="text-[11px] font-bold text-indigo-600 mb-0.5">{randomPsychic?.name}</p>
-            <p className="text-[12px] text-slate-700 leading-tight italic">"{randomPsychic?.hook}"</p>
+        <div className="fixed bottom-20 right-4 z-[60] flex items-end gap-2 animate-in slide-in-from-right-5 slide-in-from-bottom-5 duration-700">
+          <div className="relative bg-white shadow-2xl border border-slate-100 rounded-2xl rounded-br-none p-3 max-w-[200px] mb-8 ring-1 ring-black/5">
+            <p className="text-[11px] font-bold text-indigo-600 mb-0.5 uppercase tracking-tighter">{randomPsychic?.name}</p>
+            <p className="text-[12px] text-slate-700 leading-tight italic font-medium">"{randomPsychic?.hook}"</p>
             <div className="absolute bottom-[-8px] right-0 w-0 h-0 border-l-[10px] border-l-transparent border-t-[10px] border-t-white"></div>
           </div>
 
           <button 
             onClick={() => { setActiveTab('voyance'); setSelectedPsychic(randomPsychic); setShowChatNotif(false); }}
-            className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-500 flex items-center justify-center text-3xl hover:scale-110 transition-transform active:scale-95"
+            className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-600 flex items-center justify-center text-3xl hover:scale-110 transition-transform active:scale-95"
           >
             {randomPsychic?.image}
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center">
-              <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center">
+              <span className="text-[10px] text-white font-bold">1</span>
             </div>
           </button>
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 h-16 flex items-center justify-around z-50 pb-safe shadow-lg">
-        <button onClick={() => { setActiveTab('horoscope'); setViewState('list'); }} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}>
-          <Moon size={24} fill={activeTab === 'horoscope' ? "currentColor" : "none"} /><span className="text-[10px] font-bold">HOROSCOPE</span>
+      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 h-16 flex items-center justify-around z-50 pb-safe">
+        <button onClick={() => { setActiveTab('horoscope'); setViewState('list'); }} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'horoscope' ? 'text-indigo-600 scale-105' : 'text-slate-400'}`}>
+          <Moon size={22} fill={activeTab === 'horoscope' ? "currentColor" : "none"} /><span className="text-[10px] font-bold uppercase tracking-widest">Horoscope</span>
         </button>
-        <div className="w-px h-8 bg-slate-100"></div>
-        <button onClick={() => { setActiveTab('voyance'); setViewState('list'); }} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}>
-          <Sparkles size={24} fill={activeTab === 'voyance' ? "currentColor" : "none"} /><span className="text-[10px] font-bold">VOYANCE</span>
+        <div className="w-px h-6 bg-slate-200"></div>
+        <button onClick={() => { setActiveTab('voyance'); setViewState('list'); }} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'voyance' ? 'text-indigo-600 scale-105' : 'text-slate-400'}`}>
+          <MessageCircle size={22} fill={activeTab === 'voyance' ? "currentColor" : "none"} /><span className="text-[10px] font-bold uppercase tracking-widest">Voyance</span>
         </button>
       </div>
     </div>
