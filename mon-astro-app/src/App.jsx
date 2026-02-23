@@ -4,12 +4,14 @@ import { Helmet } from 'react-helmet';
 import { 
   Star, Moon, Sun, Lock, ChevronRight, User, Check, Sparkles, 
   ArrowLeft, Menu, X, LogOut, Loader2, MessageCircle, Send,
-  Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Clock, ShieldCheck
+  Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Clock, ShieldCheck, Mail
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
 const STRIPE_LINK = "https://buy.stripe.com/test_28EaEW7n8gVEaXTa9o4AU00"; 
 const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook/chat-voyance";
+const CONTACT_EMAIL = "gestion@alteoconseil.fr";
+const PRICE_TEXT = "2,99€/mois";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -76,11 +78,44 @@ const LegalModal = ({ isOpen, onClose, type }) => {
   const content = {
     mentions: {
       title: "Mentions Légales",
-      text: <div className="space-y-4 text-sm text-slate-600"><p>ÉDITEUR : Altéo Consulting, SIRET 99335347300016.</p><p>2 RUE NOTRE-DAME DES VICTOIRES, 75002 PARIS.</p></div>
+      text: (
+        <div className="space-y-4 text-sm text-slate-600 text-left">
+          <section>
+            <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-2">Éditeur du site</h4>
+            <p>Le site AstroPure est édité par la société <strong>Altéo Consulting</strong>, immatriculée au Registre du Commerce et des Sociétés sous le numéro <strong>SIRET 993 353 473 00016</strong>.</p>
+            <p>Siège social : 2 RUE NOTRE-DAME DES VICTOIRES, 75002 PARIS.</p>
+            <p>Directeur de la publication : Altéo Consulting</p>
+          </section>
+          <section>
+            <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-2">Hébergeur</h4>
+            <p>Le site est hébergé par Vercel Inc., situé au 340 S Lemon Ave #1135, Walnut, CA 91789, USA.</p>
+          </section>
+          <section>
+            <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-2">Propriété Intellectuelle</h4>
+            <p>Toute reproduction, distribution, modification, adaptation, retransmission ou publication, même partielle, des différents éléments contenus sur ce site est strictement interdite sans l'accord exprès par écrit de Altéo Consulting.</p>
+          </section>
+          <section className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-1">Contact SAV</h4>
+            <p className="flex items-center gap-2"><Mail size={14}/> {CONTACT_EMAIL}</p>
+          </section>
+        </div>
+      )
     },
     cgu: {
       title: "CGU & Confidentialité",
-      text: <div className="space-y-4 text-sm text-slate-600"><p>AstroPure est un service de divertissement réservé aux majeurs. Pas de remboursement après exécution.</p></div>
+      text: (
+        <div className="space-y-4 text-sm text-slate-600 text-left">
+          <h4 className="font-bold text-indigo-900 border-b pb-1">Politique de Confidentialité (RGPD)</h4>
+          <p className="text-[10px] italic">Dernière mise à jour : 24 Février 2026</p>
+          <p><strong>Collecte des données :</strong> Nous collectons votre e-mail (via Supabase), votre statut Premium et l'historique des messages. Vos données bancaires sont traitées exclusivement par <strong>Stripe</strong>.</p>
+          <p><strong>Droits :</strong> Vous disposez d'un droit d'accès et de suppression en nous contactant à {CONTACT_EMAIL}.</p>
+          
+          <h4 className="font-bold text-indigo-900 border-b pb-1 mt-4">Conditions Générales d'Utilisation</h4>
+          <p><strong>Objet :</strong> AstroPure est un service de divertissement. Les réponses de l'IA ne remplacent pas un conseil médical, juridique ou financier.</p>
+          <p><strong>Conditions de Paiement :</strong> L'accès Premium est facturé <strong>{PRICE_TEXT}</strong>. Étant donné la nature numérique du service, aucun remboursement ne sera effectué après déblocage.</p>
+          <p><strong>Responsabilité :</strong> Altéo Consulting décline toute responsabilité quant aux décisions prises suite aux lectures. Service réservé aux majeurs (+18 ans).</p>
+        </div>
+      )
     }
   };
   return (
@@ -122,7 +157,7 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
       <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-100 relative">
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400"><X size={20}/></button>
         <h2 className="text-2xl font-bold text-center mb-2 font-serif text-indigo-900">{isLoginMode ? 'Connexion' : 'Créer un compte'}</h2>
-        <p className="text-center text-xs text-slate-400 mb-6">{isLoginMode ? 'Heureuse de vous revoir' : 'Inscrivez-vous pour débloquer votre accès'}</p>
+        <p className="text-center text-xs text-slate-400 mb-6">{isLoginMode ? 'Heureuse de vous revoir' : `Inscrivez-vous pour débloquer votre accès (${PRICE_TEXT})`}</p>
         {error && <div className="bg-red-50 text-red-600 p-3 rounded text-xs mb-4">{error}</div>}
         <div className="space-y-4">
           <input type="email" placeholder="Votre email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500"/>
@@ -158,8 +193,8 @@ const ReadingView = ({ sign, isPremium, onGoBack, onAction }) => {
         {!isPremium && (
           <div className="p-6 bg-slate-50 rounded-2xl border border-indigo-100 text-center relative z-20">
             <Lock className="mx-auto text-indigo-400 mb-2" size={24}/>
-            <p className="text-sm font-medium text-slate-600 mb-4">L'analyse complète (Amour, Travail) et vos chiffres de chance sont réservés aux membres.</p>
-            <Button onClick={onAction} className="w-full uppercase tracking-widest text-[10px] font-bold">Débloquer mon horoscope</Button>
+            <p className="text-sm font-medium text-slate-600 mb-4">L'analyse complète (<strong>Cœur & Travail</strong>) ainsi que vos chiffres de chance sont réservés aux membres.</p>
+            <Button onClick={onAction} className="w-full uppercase tracking-widest text-[10px] font-bold">Débloquer pour {PRICE_TEXT}</Button>
           </div>
         )}
 
@@ -193,8 +228,8 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction }) => {
           <div className="bg-indigo-600 text-white p-6 rounded-2xl shadow-xl text-center space-y-3 animate-in fade-in slide-in-from-bottom-4">
             <Sparkles className="mx-auto" />
             <h4 className="font-bold italic">"Je ressens une vibration pour vous..."</h4>
-            <p className="text-xs opacity-90 leading-relaxed">Pour démarrer votre séance privée avec {psychic.name}, inscrivez-vous maintenant.</p>
-            <Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 border-none font-bold uppercase text-[10px]">Commencer la séance</Button>
+            <p className="text-xs opacity-90 leading-relaxed">Pour démarrer votre séance privée avec {psychic.name}, débloquez votre accès membre.</p>
+            <Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 border-none font-bold uppercase text-[10px]">Accès Premium ({PRICE_TEXT})</Button>
           </div>
         )}
       </div>
@@ -216,13 +251,10 @@ export default function App() {
   const [randomPsychic, setRandomPsychic] = useState(null);
   const [busyPsychicId, setBusyPsychicId] = useState('pierre');
 
-  // LOGIQUE : POP-UP 5 SECONDES + REDIRECTION
   useEffect(() => {
-    // Choisir voyante dispo pour la notif
     setRandomPsychic(VOYANTES[0]);
     const timer = setTimeout(() => setShowChatNotif(true), 5000);
 
-    // Restaurer le contexte après Stripe
     const savedContext = localStorage.getItem('astro_context');
     if (savedContext) {
       const ctx = JSON.parse(savedContext);
@@ -287,15 +319,15 @@ export default function App() {
       <Helmet><title>AstroPure | Horoscope et Voyance</title></Helmet>
 
       <nav className="bg-white/80 backdrop-blur-md border-b sticky top-0 z-50 h-16 flex items-center justify-between px-4">
-         <div className="font-serif font-bold text-xl text-indigo-900 tracking-tighter" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); }}>AstroPure</div>
-         {!session ? (
-           <button onClick={() => { setIsLoginMode(true); setViewState('auth'); }} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 uppercase tracking-widest">Compte</button>
-         ) : (
-           <div className="flex items-center gap-3">
-             {isPremium && <span className="text-[9px] bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full border border-amber-100 font-bold uppercase">Abonné</span>}
-             <button onClick={() => supabase.auth.signOut()} className="p-2 text-slate-400"><LogOut size={18}/></button>
-           </div>
-         )}
+          <div className="font-serif font-bold text-xl text-indigo-900 tracking-tighter cursor-pointer" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); }}>AstroPure</div>
+          {!session ? (
+            <button onClick={() => { setIsLoginMode(true); setViewState('auth'); }} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 uppercase tracking-widest">Compte</button>
+          ) : (
+            <div className="flex items-center gap-3">
+              {isPremium && <span className="text-[9px] bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full border border-amber-100 font-bold uppercase">Abonné</span>}
+              <button onClick={() => supabase.auth.signOut()} className="p-2 text-slate-400"><LogOut size={18}/></button>
+            </div>
+          )}
       </nav>
       
       <main className="flex-1 pb-24 overflow-y-auto">{renderContent()}</main>
@@ -307,11 +339,11 @@ export default function App() {
             <button onClick={() => setModalType('mentions')}>Mentions Légales</button>
             <button onClick={() => setModalType('cgu')}>CGU & Confidentialité</button>
           </div>
+          <p className="text-[9px]">Contact SAV : {CONTACT_EMAIL}</p>
           <div className="flex justify-center items-center gap-1 font-bold text-indigo-500 uppercase tracking-tighter"><ShieldCheck size={14}/> Paiements Sécurisés Stripe</div>
         </div>
       </footer>
 
-      {/* RETOUR DE LA NOTIFICATION CHAT */}
       {showChatNotif && activeTab === 'horoscope' && !selectedSign && viewState === 'list' && randomPsychic && (
         <div className="fixed bottom-24 right-4 z-[45] flex items-end gap-2 animate-in slide-in-from-right-5 duration-700">
           <div className="relative bg-white shadow-2xl border border-slate-100 rounded-2xl rounded-br-none p-3 max-w-[190px] mb-8">
@@ -326,7 +358,6 @@ export default function App() {
         </div>
       )}
 
-      {/* NAVIGATION BASSE */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t h-16 flex items-center justify-around z-50 pb-safe shadow-lg">
         <button onClick={() => { setActiveTab('horoscope'); setSelectedSign(null); setViewState('list'); }} className={`flex flex-col items-center gap-1 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}>
           <Moon size={22} fill={activeTab === 'horoscope' ? "currentColor" : "none"}/><span className="text-[9px] font-bold uppercase">Horoscope</span>
