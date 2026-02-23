@@ -12,6 +12,7 @@ const STRIPE_LINK = "https://buy.stripe.com/test_28EaEW7n8gVEaXTa9o4AU00";
 const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook/chat-voyance";
 const CONTACT_EMAIL = "gestion@alteoconseil.fr";
 const PRICE_TEXT = "2,99€/mois";
+const FREE_CHAT_LIMIT = 3;
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -41,21 +42,21 @@ const ZODIAC_SIGNS = [
 const VOYANTES = [
   { 
     id: 'caroline', name: 'Caroline', 
-    desc: 'Médium pur de naissance. Travaille sans support pour une voyance directe.', 
+    desc: 'Médium pur de naissance.', 
     style: 'Sincère et Directe', image: '/caroline-voyante-astropure.png', 
     hook: "J'ai un flash urgent vous concernant...", 
     welcome: "Bonjour, je suis Caroline. Je ressens une interrogation profonde en vous. Je vous écoute." 
   },
   { 
     id: 'nathalie', name: 'Nathalie', 
-    desc: 'Cartomancienne de 60 ans. Spécialiste du Grand Tarot de Marseille.', 
+    desc: 'Cartomancienne de 60 ans.', 
     style: 'Chaleureuse et Précise', image: '/nathalie-voyante-astropure.png', 
     hook: "Votre tirage de cartes révèle un tournant...", 
     welcome: "Bienvenue mon enfant. Mes cartes sont prêtes à éclairer votre chemin." 
   },
   { 
     id: 'pierre', name: 'Maître Pierre', 
-    desc: 'Astrologue et Numérologue certifié. Plus de 30 ans d\'expertise.', 
+    desc: 'Astrologue et Numérologue certifié.', 
     style: 'Analytique et Expert', image: '/pierre-voyant-astropure.png', 
     hook: "Un transit planétaire majeur impacte votre ciel...", 
     welcome: "Bonjour. L'étude de vos astres révèle une période charnière." 
@@ -82,21 +83,16 @@ const LegalModal = ({ isOpen, onClose, type }) => {
         <div className="space-y-4 text-sm text-slate-600 text-left">
           <section>
             <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-2">Éditeur du site</h4>
-            <p>Le site AstroPure est édité par la société <strong>Altéo Consulting</strong>, immatriculée au Registre du Commerce et des Sociétés sous le numéro <strong>SIRET 993 353 473 00016</strong>.</p>
+            <p>Le site AstroPure est édité par la société <strong>Altéo Consulting</strong>, immatriculée au RCS sous le numéro <strong>SIRET 993 353 473 00016</strong>.</p>
             <p>Siège social : 2 RUE NOTRE-DAME DES VICTOIRES, 75002 PARIS.</p>
-            <p>Directeur de la publication : Altéo Consulting</p>
           </section>
           <section>
             <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-2">Hébergeur</h4>
-            <p>Le site est hébergé par Vercel Inc., situé au 340 S Lemon Ave #1135, Walnut, CA 91789, USA.</p>
-          </section>
-          <section>
-            <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-2">Propriété Intellectuelle</h4>
-            <p>Toute reproduction, distribution, modification, adaptation, retransmission ou publication, même partielle, des différents éléments contenus sur ce site est strictement interdite sans l'accord exprès par écrit de Altéo Consulting.</p>
+            <p>Vercel Inc., 340 S Lemon Ave #1135, Walnut, CA 91789, USA.</p>
           </section>
           <section className="bg-slate-50 p-3 rounded-xl border border-slate-100">
             <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-1">Contact SAV</h4>
-            <p className="flex items-center gap-2"><Mail size={14}/> {CONTACT_EMAIL}</p>
+            <p className="flex items-center gap-2 font-medium text-indigo-600"><Mail size={14}/> {CONTACT_EMAIL}</p>
           </section>
         </div>
       )
@@ -105,15 +101,10 @@ const LegalModal = ({ isOpen, onClose, type }) => {
       title: "CGU & Confidentialité",
       text: (
         <div className="space-y-4 text-sm text-slate-600 text-left">
-          <h4 className="font-bold text-indigo-900 border-b pb-1">Politique de Confidentialité (RGPD)</h4>
-          <p className="text-[10px] italic">Dernière mise à jour : 24 Février 2026</p>
-          <p><strong>Collecte des données :</strong> Nous collectons votre e-mail (via Supabase), votre statut Premium et l'historique des messages. Vos données bancaires sont traitées exclusivement par <strong>Stripe</strong>.</p>
-          <p><strong>Droits :</strong> Vous disposez d'un droit d'accès et de suppression en nous contactant à {CONTACT_EMAIL}.</p>
-          
-          <h4 className="font-bold text-indigo-900 border-b pb-1 mt-4">Conditions Générales d'Utilisation</h4>
-          <p><strong>Objet :</strong> AstroPure est un service de divertissement. Les réponses de l'IA ne remplacent pas un conseil médical, juridique ou financier.</p>
-          <p><strong>Conditions de Paiement :</strong> L'accès Premium est facturé <strong>{PRICE_TEXT}</strong>. Étant donné la nature numérique du service, aucun remboursement ne sera effectué après déblocage.</p>
-          <p><strong>Responsabilité :</strong> Altéo Consulting décline toute responsabilité quant aux décisions prises suite aux lectures. Service réservé aux majeurs (+18 ans).</p>
+          <h4 className="font-bold text-indigo-900 border-b pb-1">Politique RGPD</h4>
+          <p><strong>Données :</strong> E-mail, statut Premium, historique de chat. Traitement bancaire exclusif par <strong>Stripe</strong>.</p>
+          <h4 className="font-bold text-indigo-900 border-b pb-1 mt-4">Conditions Générales</h4>
+          <p><strong>Prix :</strong> {PRICE_TEXT}. Divertissement uniquement. Pas de remboursement après exécution. Réservé aux majeurs.</p>
         </div>
       )
     }
@@ -157,14 +148,14 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
       <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-100 relative">
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400"><X size={20}/></button>
         <h2 className="text-2xl font-bold text-center mb-2 font-serif text-indigo-900">{isLoginMode ? 'Connexion' : 'Créer un compte'}</h2>
-        <p className="text-center text-xs text-slate-400 mb-6">{isLoginMode ? 'Heureuse de vous revoir' : `Inscrivez-vous pour débloquer votre accès (${PRICE_TEXT})`}</p>
+        <p className="text-center text-xs text-slate-400 mb-6">{isLoginMode ? 'Heureuse de vous revoir' : `Inscrivez-vous pour votre accès complet (${PRICE_TEXT})`}</p>
         {error && <div className="bg-red-50 text-red-600 p-3 rounded text-xs mb-4">{error}</div>}
         <div className="space-y-4">
-          <input type="email" placeholder="Votre email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500"/>
+          <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500"/>
           <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500"/>
-          <Button onClick={handleAuth} disabled={loading} className="w-full">{loading ? <Loader2 className="animate-spin"/> : (isLoginMode ? 'Se connecter' : "Continuer vers le paiement")}</Button>
+          <Button onClick={handleAuth} disabled={loading} className="w-full">{loading ? <Loader2 className="animate-spin"/> : (isLoginMode ? 'Se connecter' : "Continuer")}</Button>
         </div>
-        <div className="mt-6 text-center text-sm font-medium"><button onClick={onSwitchToLogin} className="text-indigo-600 underline">{isLoginMode ? "Pas encore de compte ? S'inscrire" : 'Déjà membre ? Se connecter'}</button></div>
+        <div className="mt-6 text-center text-sm font-medium"><button onClick={onSwitchToLogin} className="text-indigo-600 underline">{isLoginMode ? "S'inscrire" : 'Déjà membre ? Se connecter'}</button></div>
       </div>
     </div>
   );
@@ -172,7 +163,17 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
 
 // --- VUES D'INTERFACE ---
 const HomeView = ({ onSelectSign }) => (
-  <div className="max-w-5xl mx-auto px-4 py-8"><div className="text-center mb-10"><h1 className="text-3xl font-serif text-slate-900 font-bold">Horoscope Hebdomadaire</h1></div><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-12">{ZODIAC_SIGNS.map((s) => (<div key={s.id} onClick={() => onSelectSign(s)} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center cursor-pointer transition-all active:scale-95"><div className="text-4xl mb-2">{s.icon}</div><h3 className="font-semibold text-slate-800">{s.name}</h3></div>))}</div></div>
+  <div className="max-w-5xl mx-auto px-4 py-8 text-center">
+    <h1 className="text-3xl font-serif text-slate-900 font-bold mb-10">Horoscope Hebdomadaire</h1>
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-12">
+      {ZODIAC_SIGNS.map((s) => (
+        <div key={s.id} onClick={() => onSelectSign(s)} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center cursor-pointer transition-all active:scale-95">
+          <div className="text-4xl mb-2">{s.icon}</div>
+          <h3 className="font-semibold text-slate-800">{s.name}</h3>
+        </div>
+      ))}
+    </div>
+  </div>
 );
 
 const ReadingView = ({ sign, isPremium, onGoBack, onAction }) => {
@@ -186,53 +187,122 @@ const ReadingView = ({ sign, isPremium, onGoBack, onAction }) => {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       <button onClick={onGoBack} className="flex items-center text-slate-400 mb-6 font-medium"><ArrowLeft size={18} className="mr-2" /> Retour</button>
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden p-6 relative">
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 relative">
         <h2 className="text-2xl font-serif font-bold text-slate-900 mb-4">{sign.icon} {sign.name}</h2>
-        <p className="text-slate-700 leading-relaxed mb-6 italic text-lg">"{horoscope?.intro || "Les astres parlent pour vous..."}"</p>
+        <p className="text-slate-700 leading-relaxed mb-6 italic text-lg">"{horoscope?.intro || "Les astres vous préparent une surprise..."}"</p>
         
-        {!isPremium && (
-          <div className="p-6 bg-slate-50 rounded-2xl border border-indigo-100 text-center relative z-20">
-            <Lock className="mx-auto text-indigo-400 mb-2" size={24}/>
-            <p className="text-sm font-medium text-slate-600 mb-4">L'analyse complète (<strong>Cœur & Travail</strong>) ainsi que vos chiffres de chance sont réservés aux membres.</p>
-            <Button onClick={onAction} className="w-full uppercase tracking-widest text-[10px] font-bold">Débloquer pour {PRICE_TEXT}</Button>
-          </div>
-        )}
+        <div className="space-y-6">
+          {/* SECTIONS GRATUITES */}
+          <div><h3 className="font-bold text-rose-600 mb-1 border-b border-rose-100 pb-1 uppercase tracking-widest text-[10px]">Cœur</h3><p className="text-sm text-slate-600 leading-relaxed">{horoscope?.love || "Chargement..."}</p></div>
+          <div><h3 className="font-bold text-emerald-700 mb-1 border-b border-emerald-100 pb-1 uppercase tracking-widest text-[10px]">Travail</h3><p className="text-sm text-slate-600 leading-relaxed">{horoscope?.work || "Chargement..."}</p></div>
 
-        {isPremium && (
-          <div className="space-y-6 text-sm animate-in fade-in duration-500">
-             <div><h3 className="font-bold text-rose-600 mb-1 border-b border-rose-100 pb-1 uppercase tracking-widest text-[10px]">Côté Cœur</h3><p className="text-slate-600 leading-relaxed">{horoscope?.love}</p></div>
-             <div><h3 className="font-bold text-emerald-700 mb-1 border-b border-emerald-100 pb-1 uppercase tracking-widest text-[10px]">Vie Pro</h3><p className="text-slate-600 leading-relaxed">{horoscope?.work}</p></div>
-             <div className="p-4 bg-indigo-50 rounded-xl"><h3 className="font-bold text-indigo-900 text-[10px] uppercase mb-2">Chiffres de Chance</h3><p className="text-sm text-indigo-800 font-medium">Numéros : {Array.isArray(horoscope?.premium_data?.lucky_numbers) ? horoscope.premium_data.lucky_numbers.join(', ') : "Calcul en cours..."}</p></div>
-          </div>
-        )}
+          {/* SECTIONS PAYANTES */}
+          {!isPremium ? (
+            <div className="p-6 bg-slate-50 rounded-2xl border border-indigo-100 text-center relative mt-6">
+              <Lock className="mx-auto text-indigo-400 mb-2" size={24}/>
+              <p className="text-sm font-medium text-slate-600 mb-4 uppercase tracking-tighter">Débloquez vos prévisions <strong>Famille</strong> et <strong>Chance</strong></p>
+              <Button onClick={onAction} className="w-full uppercase tracking-widest text-[10px] font-bold">Accès Premium ({PRICE_TEXT})</Button>
+            </div>
+          ) : (
+            <>
+              <div className="animate-in fade-in duration-700"><h3 className="font-bold text-indigo-600 mb-1 border-b border-indigo-100 pb-1 uppercase tracking-widest text-[10px]">Famille</h3><p className="text-sm text-slate-600 leading-relaxed">{horoscope?.family || "L'équilibre familial sera au centre de vos préoccupations cette semaine."}</p></div>
+              <div className="p-4 bg-amber-50 rounded-xl animate-in zoom-in-95 duration-700"><h3 className="font-bold text-amber-900 text-[10px] uppercase mb-2">Chiffres de Chance</h3><p className="text-sm text-amber-800 font-bold">Numéros : {Array.isArray(horoscope?.premium_data?.lucky_numbers) ? horoscope.premium_data.lucky_numbers.join(', ') : "7, 14, 23, 44"}</p></div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
 const PsychicSelectionView = ({ onSelectPsychic, busyId }) => (
-  <div className="max-w-4xl mx-auto px-4 py-8"><div className="text-center mb-10"><h1 className="text-3xl font-serif font-bold text-slate-900">Voyance en Direct</h1></div><div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-12">{VOYANTES.map((p) => {
-    const isBusy = p.id === busyId;
-    return (<div key={p.id} onClick={() => !isBusy && onSelectPsychic(p)} className={`bg-white rounded-3xl p-6 text-center border shadow-sm transition-all ${isBusy ? 'opacity-80' : 'cursor-pointer hover:border-indigo-300'}`}><img src={p.image} className={`w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md ${isBusy ? 'grayscale' : ''}`} /><h3 className="font-bold text-slate-800 text-lg">{p.name}</h3><button className={`w-full mt-4 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${isBusy ? 'bg-slate-50 text-slate-300' : 'bg-indigo-600 text-white'}`}>{isBusy ? 'Occupée' : 'Consulter'}</button></div>)
-  })}</div></div>
+  <div className="max-w-4xl mx-auto px-4 py-8 text-center">
+    <h1 className="text-3xl font-serif font-bold text-slate-900 mb-10">Voyance en Direct</h1>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-12">
+      {VOYANTES.map((p) => {
+        const isBusy = p.id === busyId;
+        return (
+          <div key={p.id} onClick={() => !isBusy && onSelectPsychic(p)} className={`bg-white rounded-3xl p-6 border shadow-sm transition-all ${isBusy ? 'opacity-80' : 'cursor-pointer hover:border-indigo-300'}`}>
+            <img src={p.image} className={`w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md ${isBusy ? 'grayscale' : ''}`} />
+            <h3 className="font-bold text-slate-800 text-lg">{p.name}</h3>
+            <p className="text-[10px] text-slate-400 italic mb-4">{p.style}</p>
+            <button className={`w-full py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${isBusy ? 'bg-slate-50 text-slate-300' : 'bg-indigo-600 text-white'}`}>{isBusy ? 'Occupée' : 'Consulter'}</button>
+          </div>
+        )
+      })}
+    </div>
+  </div>
 );
 
 const ChatView = ({ psychic, isPremium, onGoBack, onAction }) => {
-  const [messages] = useState([{ role: 'assistant', content: psychic.welcome }]);
+  const [messages, setMessages] = useState([{ role: 'assistant', content: psychic.welcome }]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef(null);
+
+  // Filtrer les messages envoyés par l'utilisateur pour le compteur
+  const userMessageCount = messages.filter(m => m.role === 'user').length;
+  const isLimitReached = !isPremium && userMessageCount >= FREE_CHAT_LIMIT;
+
+  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  const handleSend = async () => {
+    if (!input.trim() || isLimitReached || loading) return;
+    
+    const newMsg = { role: 'user', content: input };
+    setMessages(prev => [...prev, newMsg]);
+    setInput('');
+    setLoading(true);
+
+    try {
+      // Logique webhook n8n simplifiée pour l'exemple
+      const response = await fetch(N8N_CHAT_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: input, psychic: psychic.name, history: messages })
+      });
+      const data = await response.json();
+      setMessages(prev => [...prev, { role: 'assistant', content: data.output || "Je ressens une connexion..." }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { role: 'assistant', content: "Les astres sont brouillés, réessayez dans un instant." }]);
+    } finally { setLoading(false); }
+  };
+
   return (
     <div className="fixed inset-0 top-16 bottom-16 bg-white z-[40] flex flex-col md:max-w-2xl md:mx-auto shadow-xl">
-      <div className="flex items-center gap-4 py-3 px-4 border-b bg-white/80 backdrop-blur-md"><button onClick={onGoBack} className="p-1.5 bg-slate-50 rounded-full"><ArrowLeft size={20}/></button><img src={psychic.image} className="w-10 h-10 rounded-full object-cover" /><div><h3 className="font-bold text-sm">{psychic.name}</h3></div></div>
+      <div className="flex items-center gap-4 py-3 px-4 border-b bg-white/80 backdrop-blur-md">
+        <button onClick={onGoBack} className="p-1.5 bg-slate-50 rounded-full"><ArrowLeft size={20}/></button>
+        <img src={psychic.image} className="w-10 h-10 rounded-full object-cover" />
+        <h3 className="font-bold text-sm">{psychic.name}</h3>
+      </div>
+
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/30">
-        {messages.map((m, i) => (<div key={i} className="flex justify-start"><div className="max-w-[85%] p-3.5 rounded-2xl text-sm bg-white border border-slate-100 text-slate-700 rounded-bl-none shadow-sm">{m.content}</div></div>))}
-        {!isPremium && (
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm shadow-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'}`}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {loading && <div className="flex justify-start"><div className="bg-white p-3 rounded-2xl border border-slate-100"><Loader2 className="animate-spin text-indigo-400" size={18}/></div></div>}
+        <div ref={scrollRef} />
+
+        {isLimitReached && (
           <div className="bg-indigo-600 text-white p-6 rounded-2xl shadow-xl text-center space-y-3 animate-in fade-in slide-in-from-bottom-4">
             <Sparkles className="mx-auto" />
-            <h4 className="font-bold italic">"Je ressens une vibration pour vous..."</h4>
-            <p className="text-xs opacity-90 leading-relaxed">Pour démarrer votre séance privée avec {psychic.name}, débloquez votre accès membre.</p>
-            <Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 border-none font-bold uppercase text-[10px]">Accès Premium ({PRICE_TEXT})</Button>
+            <h4 className="font-bold italic">"Votre destin se précise..."</h4>
+            <p className="text-xs opacity-90 leading-relaxed">Vous avez utilisé vos {FREE_CHAT_LIMIT} messages gratuits. Débloquez l'accès illimité pour continuer votre séance.</p>
+            <Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 border-none font-bold uppercase text-[10px]">Passer en Premium ({PRICE_TEXT})</Button>
           </div>
         )}
       </div>
+
+      {!isLimitReached && (
+        <div className="p-4 border-t bg-white flex gap-2">
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question..." className="flex-1 bg-slate-50 border-none rounded-xl px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+          <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"><Send size={18}/></button>
+        </div>
+      )}
     </div>
   );
 };
@@ -334,22 +404,21 @@ export default function App() {
 
       <footer className="bg-white border-t p-8 text-center text-[10px] text-slate-400 pb-32">
         <div className="max-w-4xl mx-auto space-y-4">
-          <p className="font-bold tracking-widest">ALTÉO CONSULTING</p>
+          <p className="font-bold tracking-widest uppercase">Altéo Consulting</p>
           <div className="flex justify-center gap-4 underline">
             <button onClick={() => setModalType('mentions')}>Mentions Légales</button>
             <button onClick={() => setModalType('cgu')}>CGU & Confidentialité</button>
           </div>
-          <p className="text-[9px]">Contact SAV : {CONTACT_EMAIL}</p>
-          <div className="flex justify-center items-center gap-1 font-bold text-indigo-500 uppercase tracking-tighter"><ShieldCheck size={14}/> Paiements Sécurisés Stripe</div>
+          <p className="text-[9px]">SAV : {CONTACT_EMAIL}</p>
+          <div className="flex justify-center items-center gap-1 font-bold text-indigo-500 uppercase tracking-tighter"><ShieldCheck size={14}/> Sécurisé par Stripe</div>
         </div>
       </footer>
 
       {showChatNotif && activeTab === 'horoscope' && !selectedSign && viewState === 'list' && randomPsychic && (
-        <div className="fixed bottom-24 right-4 z-[45] flex items-end gap-2 animate-in slide-in-from-right-5 duration-700">
+        <div className="fixed bottom-24 right-4 z-[45] flex items-end gap-2 animate-in slide-in-from-right-5">
           <div className="relative bg-white shadow-2xl border border-slate-100 rounded-2xl rounded-br-none p-3 max-w-[190px] mb-8">
             <p className="text-[10px] font-bold text-indigo-600 mb-0.5 uppercase">{randomPsychic.name}</p>
-            <p className="text-[12px] text-slate-700 leading-tight italic">"{randomPsychic.hook}"</p>
-            <div className="absolute bottom-[-8px] right-0 w-0 h-0 border-l-[10px] border-l-transparent border-t-[10px] border-t-white"></div>
+            <p className="text-[11px] text-slate-700 leading-tight italic">"{randomPsychic.hook}"</p>
           </div>
           <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(randomPsychic); setShowChatNotif(false); }} className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-600 overflow-hidden active:scale-95 transition-all">
             <img src={randomPsychic.image} className="w-full h-full object-cover" />
