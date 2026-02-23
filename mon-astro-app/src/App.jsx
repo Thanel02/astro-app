@@ -41,20 +41,20 @@ const ZODIAC_SIGNS = [
 
 const VOYANTES = [
   { 
-    id: 'francoise', 
-    name: 'Françoise', 
+    id: 'caroline', 
+    name: 'Caroline', 
     desc: 'Médium pur de naissance. Travaille sans support pour une voyance directe.', 
     style: 'Sincère, sans complaisance.', 
-    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=300&h=300', 
+    image: '/caroline.png', // Chemin vers ton fichier local
     hook: "J'ai un flash vous concernant...", 
-    welcome: "Bonjour, je suis Françoise. Je ressens une interrogation profonde en vous. Je vous écoute." 
+    welcome: "Bonjour, je suis Caroline. Je ressens une interrogation profonde en vous. Je vous écoute." 
   },
   { 
     id: 'nathalie', 
     name: 'Nathalie', 
-    desc: 'Cartomancienne. Spécialiste du Grand Tarot de Marseille et de la vie affective.', 
+    desc: 'Cartomancienne de 60 ans d\'expérience. Spécialiste du Grand Tarot de Marseille.', 
     style: 'Chaleureuse et précise.', 
-    image: 'https://images.unsplash.com/photo-1552699611-e2c2a8e56044?auto=format&fit=crop&q=80&w=300&h=300', 
+    image: '/nathalie.png', // Chemin vers ton fichier local
     hook: "Votre tirage semble indiquer un changement...", 
     welcome: "Bienvenue. Mes cartes sont prêtes à répondre à vos doutes. Que voulez-vous savoir ?" 
   },
@@ -63,7 +63,7 @@ const VOYANTES = [
     name: 'Maître Pierre', 
     desc: 'Astrologue et Numérologue. Plus de 30 ans d\'expérience en cabinet.', 
     style: 'Analytique et pédagogue.', 
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300&h=300', 
+    image: '/pierre.png', // Chemin vers ton fichier local
     hook: "Un transit planétaire vous impacte...", 
     welcome: "Bonjour. L'étude de vos astres révèle une période charnière. Posons les chiffres." 
   }
@@ -151,7 +151,7 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
                <div className="bg-white/90 backdrop-blur rounded-xl p-5 shadow-lg text-center w-full max-w-xs border border-indigo-100">
                  <Lock className="mx-auto text-indigo-500 mb-2" size={20}/>
                  <p className="text-xs text-slate-500 mb-3 font-medium">Débloquez vos numéros de chance.</p>
-                 <Button onClick={session ? onSubscribeReq : onAuthReq} className="w-full text-xs py-2 h-auto">Débloquer</Button>
+                 <Button onClick={session ? onSubscribeReq : onAuthReq} className="w-full text-xs py-2 h-auto">Débloquer mon accès</Button>
                </div>
              </div>
            )}
@@ -165,7 +165,7 @@ const PsychicSelectionView = ({ onSelectPsychic, busyId }) => (
   <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
     <div className="text-center mb-10 space-y-2">
       <h1 className="text-3xl md:text-4xl font-serif text-slate-900 font-bold">Consultation Privée</h1>
-      <p className="text-slate-500">Nos experts sont à votre écoute</p>
+      <p className="text-slate-500">Choisissez l'expert pour une séance en direct</p>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {VOYANTES.map((p) => {
@@ -226,12 +226,12 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
       if (data.error === "LIMIT_REACHED") {
         setMsgCount(3);
       } else {
-        const reply = data.response || data.output || data.text || "La connexion est instable, reposez votre question.";
+        const reply = data.response || data.output || data.text || "La connexion est instable, reposez votre question s'il vous plaît.";
         setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
         if (!isPremium) setMsgCount(prev => prev + 1);
       }
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Une erreur est survenue." }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Une erreur est survenue lors de la consultation." }]);
     } finally { setLoading(false); }
   };
 
@@ -245,7 +245,7 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
           <img src={psychic.image} className="w-12 h-12 rounded-full object-cover border border-slate-200" />
           <div><h3 className="font-bold text-slate-800">{psychic.name}</h3><div className="text-[10px] text-green-500 font-bold flex items-center gap-1 uppercase"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> En ligne</div></div>
         </div>
-        <div className="ml-auto">{!isPremium && <span className="text-[10px] bg-slate-100 px-2 py-1 rounded font-bold text-slate-400 uppercase">{3 - msgCount} questions offertes</span>}</div>
+        <div className="ml-auto">{!isPremium && <span className="text-[10px] bg-slate-100 px-2 py-1 rounded font-bold text-slate-400 uppercase">{3 - msgCount} q. gratuites</span>}</div>
       </div>
       <div className="flex-1 overflow-y-auto space-y-4 px-2 pb-4">
         {messages.map((m, i) => (
@@ -376,14 +376,14 @@ export default function App() {
     }
   };
 
-  const canShowNotif = showChatNotif && activeTab === 'horoscope' && !selectedSign && viewState === 'list';
+  const canShowNotif = showChatNotif && activeTab === 'horoscope' && !selectedSign && viewState === 'list' && randomPsychic;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-20">
       <nav className="bg-white border-b border-slate-100 sticky top-0 z-50 h-16 flex items-center justify-between px-4">
          <div className="font-serif font-bold text-xl tracking-tight text-indigo-900">Astro<span className="text-indigo-600">Pure</span></div>
          <div className="flex items-center gap-3">
-            {isPremium && <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-100 uppercase tracking-tighter">Premium</span>}
+            {isPremium && <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-100 uppercase tracking-tighter shadow-sm">Client Premium</span>}
             {!session && <button onClick={() => goToAuth(true)} className="text-sm font-semibold text-indigo-600 underline">Mon Espace</button>}
             {session && <button onClick={handleLogout} className="p-2 bg-slate-50 rounded-full text-slate-400 hover:text-slate-600 transition-colors"><LogOut size={18}/></button>}
          </div>
@@ -391,7 +391,8 @@ export default function App() {
       
       <main className="pt-2">{renderContent()}</main>
 
-      {canShowNotif && randomPsychic && (
+      {/* BULLE DE CHAT NOTIFICATION */}
+      {canShowNotif && (
         <div className="fixed bottom-20 right-4 z-[60] flex items-end gap-2 animate-in slide-in-from-right-5 slide-in-from-bottom-5 duration-700">
           <div className="relative bg-white shadow-2xl border border-slate-100 rounded-2xl rounded-br-none p-3 max-w-[200px] mb-8 ring-1 ring-black/5">
             <p className="text-[11px] font-bold text-indigo-600 mb-0.5 uppercase tracking-tighter">{randomPsychic.name}</p>
