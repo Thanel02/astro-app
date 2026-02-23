@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { 
   Star, Moon, Sun, Lock, ChevronRight, User, Check, Sparkles, 
   ArrowLeft, Menu, X, LogOut, Loader2, MessageCircle, Send,
-  Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell
+  Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Phone
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -45,8 +45,8 @@ const VOYANTES = [
     name: 'Françoise', 
     desc: 'Médium pur de naissance. Capte les messages de vos guides sans support.', 
     style: 'Sincère et sans complaisance.', 
-    image: '🕯️', 
-    hook: "On me transmet un message pour vous...", 
+    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200&h=200', 
+    hook: "Mon pendule s'agite pour vous...", 
     welcome: "Bonjour, je suis Françoise. Je ressens une interrogation profonde en vous. Je vous écoute pour éclairer votre chemin." 
   },
   { 
@@ -54,8 +54,8 @@ const VOYANTES = [
     name: 'Nathalie', 
     desc: 'Cartomancienne experte. Spécialiste du Grand Tarot de Marseille et de l\'Amour.', 
     style: 'Chaleureuse et précise.', 
-    image: '🃏', 
-    hook: "Vos cartes viennent de tomber...", 
+    image: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&q=80&w=200&h=200', 
+    hook: "Votre tirage sentimental est prêt...", 
     welcome: "Bienvenue dans mon salon. Mes cartes sont prêtes à répondre à vos doutes les plus secrets. Que voulez-vous savoir ?" 
   },
   { 
@@ -63,8 +63,8 @@ const VOYANTES = [
     name: 'Maître Pierre', 
     desc: 'Astrologue et Numérologue. Analyse vos cycles de vie et vos blocages.', 
     style: 'Analytique et pédagogue.', 
-    image: '📜', 
-    hook: "Votre ciel astral bouge aujourd'hui...", 
+    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200&h=200', 
+    hook: "Une conjoncture rare se profile...", 
     welcome: "Bonjour. L'étude de vos astres révèle une période charnière. Posons les chiffres pour comprendre ce qui arrive." 
   }
 ];
@@ -90,7 +90,7 @@ const Card = ({ children, className = '', onClick }) => (
 const HomeView = ({ onSelectSign }) => (
   <div className="max-w-5xl mx-auto px-4 py-8 pb-24">
     <div className="text-center mb-10 space-y-2">
-      <h1 className="text-3xl md:text-4xl font-serif text-slate-900 font-bold">Horoscope Hebdomadaire</h1>
+      <h1 className="text-3xl md:text-4xl font-serif text-slate-900 font-bold tracking-tight">Horoscope Hebdomadaire</h1>
       <p className="text-slate-500 italic">Consultez les prévisions de nos astrologues</p>
     </div>
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -162,22 +162,30 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
   );
 };
 
-const PsychicSelectionView = ({ onSelectPsychic }) => (
+const PsychicSelectionView = ({ onSelectPsychic, busyId }) => (
   <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
     <div className="text-center mb-10 space-y-2">
       <h1 className="text-3xl md:text-4xl font-serif text-slate-900 font-bold">Consultation Privée</h1>
       <p className="text-slate-500">Choisissez l'expert qui saura vous guider</p>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {VOYANTES.map((p) => (
-        <Card key={p.id} onClick={() => onSelectPsychic(p)} className="cursor-pointer hover:border-indigo-300 text-center relative overflow-hidden group">
-          <div className="text-6xl mb-4 transform group-hover:scale-105 transition-transform duration-500">{p.image}</div>
-          <h3 className="text-xl font-bold text-slate-800 mb-1">{p.name}</h3>
-          <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-3">{p.style}</p>
-          <p className="text-sm text-slate-500 leading-relaxed mb-4">{p.desc}</p>
-          <div className="text-xs font-medium text-slate-400 border border-slate-200 py-1 px-4 rounded-full inline-block">Disponible</div>
-        </Card>
-      ))}
+      {VOYANTES.map((p) => {
+        const isBusy = p.id === busyId;
+        return (
+          <Card key={p.id} onClick={() => onSelectPsychic(p)} className="cursor-pointer hover:border-indigo-300 text-center relative overflow-hidden group">
+            <div className="relative inline-block mb-4">
+              <img src={p.image} alt={p.name} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg mx-auto grayscale-[20%] group-hover:grayscale-0 transition-all" />
+              <div className={`absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-white ${isBusy ? 'bg-orange-500' : 'bg-green-500'}`}></div>
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-1">{p.name}</h3>
+            <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-3">{p.style}</p>
+            <p className="text-sm text-slate-500 leading-relaxed mb-4">{p.desc}</p>
+            <div className={`text-[10px] font-bold py-1 px-4 rounded-full inline-block uppercase tracking-widest ${isBusy ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
+              {isBusy ? 'En consultation' : 'Disponible'}
+            </div>
+          </Card>
+        );
+      })}
     </div>
   </div>
 );
@@ -227,7 +235,7 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
       <div className="flex items-center gap-4 border-b border-slate-100 pb-4 mb-4">
         <button onClick={onGoBack} className="p-2 hover:bg-slate-100 rounded-full"><ArrowLeft size={20}/></button>
         <div className="flex items-center gap-3">
-          <div className="text-3xl bg-slate-50 p-2 rounded-full border border-slate-100">{psychic.image}</div>
+          <img src={psychic.image} className="w-12 h-12 rounded-full object-cover border border-slate-200" />
           <div><h3 className="font-bold text-slate-800">{psychic.name}</h3><div className="text-[10px] text-green-500 font-bold flex items-center gap-1 uppercase"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Consultation en cours</div></div>
         </div>
         <div className="ml-auto">{!isPremium && <span className="text-[10px] bg-slate-100 px-2 py-1 rounded font-bold text-slate-400 uppercase">{3 - msgCount} q. gratuites</span>}</div>
@@ -308,12 +316,20 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
 
-  // LOGIQUE CHAT NOTIF CLASSIQUE
+  // LOGIQUE CHAT NOTIF & DISPONIBILITÉ
   const [showChatNotif, setShowChatNotif] = useState(false);
   const [randomPsychic, setRandomPsychic] = useState(null);
+  const [busyPsychicId, setBusyPsychicId] = useState(null);
 
   useEffect(() => {
-    setRandomPsychic(VOYANTES[Math.floor(Math.random() * VOYANTES.length)]);
+    // Une voyante au hasard est toujours "En consultation"
+    const busyOnes = VOYANTES[Math.floor(Math.random() * VOYANTES.length)];
+    setBusyPsychicId(busyOnes.id);
+
+    // Une autre voyante (ou la même) envoie la notif
+    const notifOne = VOYANTES[Math.floor(Math.random() * VOYANTES.length)];
+    setRandomPsychic(notifOne);
+
     const timer = setTimeout(() => setShowChatNotif(true), 5000);
     return () => clearTimeout(timer);
   }, []);
@@ -354,7 +370,7 @@ export default function App() {
     }
     if (activeTab === 'voyance') {
       if (selectedPsychic) return <ChatView psychic={selectedPsychic} session={session} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAuthReq={() => goToAuth(true)} onSubscribeReq={handleSubscribe} />;
-      return <PsychicSelectionView onSelectPsychic={setSelectedPsychic} />;
+      return <PsychicSelectionView onSelectPsychic={setSelectedPsychic} busyId={busyPsychicId} />;
     }
   };
 
@@ -384,9 +400,9 @@ export default function App() {
 
           <button 
             onClick={() => { setActiveTab('voyance'); setSelectedPsychic(randomPsychic); setShowChatNotif(false); }}
-            className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-600 flex items-center justify-center text-3xl hover:scale-110 transition-transform active:scale-95"
+            className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-600 flex items-center justify-center overflow-hidden hover:scale-110 transition-transform active:scale-95"
           >
-            {randomPsychic?.image}
+            <img src={randomPsychic?.image} className="w-full h-full object-cover" alt={randomPsychic?.name} />
             <div className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center">
               <span className="text-[10px] text-white font-bold">1</span>
             </div>
