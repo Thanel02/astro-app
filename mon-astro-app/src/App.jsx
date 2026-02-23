@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { 
   Star, Moon, Sun, Lock, ChevronRight, User, Check, Sparkles, 
   ArrowLeft, Menu, X, LogOut, Loader2, MessageCircle, Send,
-  Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Phone
+  Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Clock
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -43,29 +43,29 @@ const VOYANTES = [
   { 
     id: 'francoise', 
     name: 'Françoise', 
-    desc: 'Médium pur de naissance. Capte les messages de vos guides sans support.', 
-    style: 'Sincère et sans complaisance.', 
-    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200&h=200', 
-    hook: "Mon pendule s'agite pour vous...", 
-    welcome: "Bonjour, je suis Françoise. Je ressens une interrogation profonde en vous. Je vous écoute pour éclairer votre chemin." 
+    desc: 'Médium pur de naissance. Travaille sans support pour une voyance directe.', 
+    style: 'Sincère, sans complaisance.', 
+    image: 'https://images.unsplash.com/photo-1552699611-e2c2a8e56044?auto=format&fit=crop&q=80&w=300&h=300', 
+    hook: "J'ai un flash vous concernant...", 
+    welcome: "Bonjour, je suis Françoise. Je ressens une interrogation profonde en vous. Je vous écoute." 
   },
   { 
     id: 'nathalie', 
     name: 'Nathalie', 
-    desc: 'Cartomancienne experte. Spécialiste du Grand Tarot de Marseille et de l\'Amour.', 
+    desc: 'Cartomancienne. Spécialiste du Grand Tarot de Marseille et de la vie affective.', 
     style: 'Chaleureuse et précise.', 
-    image: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&q=80&w=200&h=200', 
-    hook: "Votre tirage sentimental est prêt...", 
-    welcome: "Bienvenue dans mon salon. Mes cartes sont prêtes à répondre à vos doutes les plus secrets. Que voulez-vous savoir ?" 
+    image: 'https://images.unsplash.com/photo-1566616213894-2d4e1baee5d8?auto=format&fit=crop&q=80&w=300&h=300', 
+    hook: "Votre tirage semble indiquer un changement...", 
+    welcome: "Bienvenue. Mes cartes sont prêtes à répondre à vos doutes. Que voulez-vous savoir ?" 
   },
   { 
     id: 'pierre', 
     name: 'Maître Pierre', 
-    desc: 'Astrologue et Numérologue. Analyse vos cycles de vie et vos blocages.', 
+    desc: 'Astrologue et Numérologue. Plus de 30 ans d\'expérience en cabinet.', 
     style: 'Analytique et pédagogue.', 
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200&h=200', 
-    hook: "Une conjoncture rare se profile...", 
-    welcome: "Bonjour. L'étude de vos astres révèle une période charnière. Posons les chiffres pour comprendre ce qui arrive." 
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300&h=300', 
+    hook: "Un transit planétaire vous impacte...", 
+    welcome: "Bonjour. L'étude de vos astres révèle une période charnière. Posons les chiffres." 
   }
 ];
 
@@ -73,9 +73,8 @@ const VOYANTES = [
 const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }) => {
   const baseStyle = "px-6 py-3 rounded-full font-medium transition-all duration-300 transform active:scale-95 shadow-sm flex items-center justify-center";
   const variants = {
-    primary: "bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400",
+    primary: "bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed",
     secondary: "bg-white text-indigo-900 border border-indigo-100 hover:border-indigo-300",
-    outline: "border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50",
   };
   return <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>{children}</button>;
 };
@@ -90,8 +89,8 @@ const Card = ({ children, className = '', onClick }) => (
 const HomeView = ({ onSelectSign }) => (
   <div className="max-w-5xl mx-auto px-4 py-8 pb-24">
     <div className="text-center mb-10 space-y-2">
-      <h1 className="text-3xl md:text-4xl font-serif text-slate-900 font-bold tracking-tight">Horoscope Hebdomadaire</h1>
-      <p className="text-slate-500 italic">Consultez les prévisions de nos astrologues</p>
+      <h1 className="text-3xl md:text-4xl font-serif text-slate-900 font-bold">Horoscope Hebdomadaire</h1>
+      <p className="text-slate-500 italic">Découvrez vos prévisions personnalisées</p>
     </div>
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {ZODIAC_SIGNS.map((sign) => (
@@ -151,7 +150,7 @@ const ReadingView = ({ sign, session, isPremium, onGoBack, onAuthReq, onSubscrib
              <div className="absolute inset-0 flex items-center justify-center p-4">
                <div className="bg-white/90 backdrop-blur rounded-xl p-5 shadow-lg text-center w-full max-w-xs border border-indigo-100">
                  <Lock className="mx-auto text-indigo-500 mb-2" size={20}/>
-                 <p className="text-xs text-slate-500 mb-3 font-medium">Accédez à vos conseils personnalisés et vos chiffres de chance.</p>
+                 <p className="text-xs text-slate-500 mb-3 font-medium">Débloquez vos conseils personnalisés et vos chiffres de chance.</p>
                  <Button onClick={session ? onSubscribeReq : onAuthReq} className="w-full text-xs py-2 h-auto">Débloquer mon accès</Button>
                </div>
              </div>
@@ -166,23 +165,31 @@ const PsychicSelectionView = ({ onSelectPsychic, busyId }) => (
   <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
     <div className="text-center mb-10 space-y-2">
       <h1 className="text-3xl md:text-4xl font-serif text-slate-900 font-bold">Consultation Privée</h1>
-      <p className="text-slate-500">Choisissez l'expert qui saura vous guider</p>
+      <p className="text-slate-500">Choisissez votre expert pour une séance en direct</p>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {VOYANTES.map((p) => {
         const isBusy = p.id === busyId;
         return (
-          <Card key={p.id} onClick={() => onSelectPsychic(p)} className="cursor-pointer hover:border-indigo-300 text-center relative overflow-hidden group">
+          <Card 
+            key={p.id} 
+            onClick={() => !isBusy && onSelectPsychic(p)} 
+            className={`text-center relative overflow-hidden transition-all ${isBusy ? 'opacity-80 cursor-not-allowed grayscale-[30%]' : 'cursor-pointer hover:border-indigo-300'}`}
+          >
             <div className="relative inline-block mb-4">
-              <img src={p.image} alt={p.name} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg mx-auto grayscale-[20%] group-hover:grayscale-0 transition-all" />
+              <img src={p.image} alt={p.name} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg mx-auto" />
               <div className={`absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-white ${isBusy ? 'bg-orange-500' : 'bg-green-500'}`}></div>
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-1">{p.name}</h3>
             <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-3">{p.style}</p>
-            <p className="text-sm text-slate-500 leading-relaxed mb-4">{p.desc}</p>
-            <div className={`text-[10px] font-bold py-1 px-4 rounded-full inline-block uppercase tracking-widest ${isBusy ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
-              {isBusy ? 'En consultation' : 'Disponible'}
-            </div>
+            <p className="text-sm text-slate-500 leading-relaxed mb-6 h-12">{p.desc}</p>
+            
+            <button 
+              disabled={isBusy}
+              className={`w-full py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-colors ${isBusy ? 'bg-slate-100 text-slate-400' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-100'}`}
+            >
+              {isBusy ? 'Occupé(e)' : 'Consulter'}
+            </button>
           </Card>
         );
       })}
@@ -219,7 +226,7 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
       if (data.error === "LIMIT_REACHED") {
         setMsgCount(3);
       } else {
-        const reply = data.response || data.output || data.text || "La connexion est instable, reposez votre question s'il vous plaît.";
+        const reply = data.response || data.output || data.text || "Je n'arrive pas à capter vos énergies pour le moment. Réessayez.";
         setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
         if (!isPremium) setMsgCount(prev => prev + 1);
       }
@@ -236,7 +243,7 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
         <button onClick={onGoBack} className="p-2 hover:bg-slate-100 rounded-full"><ArrowLeft size={20}/></button>
         <div className="flex items-center gap-3">
           <img src={psychic.image} className="w-12 h-12 rounded-full object-cover border border-slate-200" />
-          <div><h3 className="font-bold text-slate-800">{psychic.name}</h3><div className="text-[10px] text-green-500 font-bold flex items-center gap-1 uppercase"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Consultation en cours</div></div>
+          <div><h3 className="font-bold text-slate-800">{psychic.name}</h3><div className="text-[10px] text-green-500 font-bold flex items-center gap-1 uppercase"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> En ligne</div></div>
         </div>
         <div className="ml-auto">{!isPremium && <span className="text-[10px] bg-slate-100 px-2 py-1 rounded font-bold text-slate-400 uppercase">{3 - msgCount} q. gratuites</span>}</div>
       </div>
@@ -251,7 +258,7 @@ const ChatView = ({ psychic, session, isPremium, onGoBack, onSubscribeReq, onAut
       </div>
       <div className="p-4 bg-white border-t border-slate-100">
         {showPaywall ? (
-          <div className="text-center p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+          <div className="text-center p-4 bg-indigo-50 rounded-2xl border border-indigo-100 animate-in zoom-in">
             <h3 className="font-bold text-indigo-900 mb-1">Poursuivez cette consultation</h3>
             <p className="text-xs text-slate-500 mb-3">Vos 3 questions gratuites ont été épuisées.</p>
             <Button onClick={session ? onSubscribeReq : onAuthReq} className="w-full py-2 text-sm uppercase tracking-wide">Accès illimité</Button>
@@ -293,14 +300,14 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
     <div className="flex items-center justify-center min-h-[60vh] px-4">
       <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-100 relative">
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={20}/></button>
-        <h2 className="text-2xl font-bold text-center mb-6 font-serif">{isLoginMode ? 'Espace Membre' : 'Créer un compte'}</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 font-serif">{isLoginMode ? 'Espace Membre' : 'Inscription'}</h2>
         {error && <div className="bg-red-50 text-red-600 p-3 rounded text-sm mb-4">{error}</div>}
         <div className="space-y-4">
           <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500 shadow-sm"/>
           <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500 shadow-sm"/>
-          <Button onClick={handleAuth} disabled={loading} className="w-full mt-4 uppercase tracking-wider">{loading ? <Loader2 className="animate-spin"/> : (isLoginMode ? 'Se connecter' : "Valider mon inscription")}</Button>
+          <Button onClick={handleAuth} disabled={loading} className="w-full mt-4 uppercase tracking-wider">{loading ? <Loader2 className="animate-spin"/> : (isLoginMode ? 'Se connecter' : "Valider")}</Button>
         </div>
-        <div className="mt-6 text-center text-sm"><button onClick={onSwitchToLogin} className="text-indigo-600 font-medium underline">{isLoginMode ? "Nouveau membre ? S'inscrire" : 'Déjà inscrit ? Connexion'}</button></div>
+        <div className="mt-6 text-center text-sm"><button onClick={onSwitchToLogin} className="text-indigo-600 font-medium underline">{isLoginMode ? "Créer un compte" : 'Déjà inscrit ?'}</button></div>
       </div>
     </div>
   );
@@ -322,12 +329,13 @@ export default function App() {
   const [busyPsychicId, setBusyPsychicId] = useState(null);
 
   useEffect(() => {
-    // Une voyante au hasard est toujours "En consultation"
-    const busyOnes = VOYANTES[Math.floor(Math.random() * VOYANTES.length)];
-    setBusyPsychicId(busyOnes.id);
+    // 1. Définir qui est occupé au hasard
+    const busyOne = VOYANTES[Math.floor(Math.random() * VOYANTES.length)];
+    setBusyPsychicId(busyOne.id);
 
-    // Une autre voyante (ou la même) envoie la notif
-    const notifOne = VOYANTES[Math.floor(Math.random() * VOYANTES.length)];
+    // 2. Choisir une voyante DISPONIBLE pour envoyer la notif
+    const availablePsychics = VOYANTES.filter(p => p.id !== busyOne.id);
+    const notifOne = availablePsychics[Math.floor(Math.random() * availablePsychics.length)];
     setRandomPsychic(notifOne);
 
     const timer = setTimeout(() => setShowChatNotif(true), 5000);
@@ -381,7 +389,7 @@ export default function App() {
       <nav className="bg-white border-b border-slate-100 sticky top-0 z-50 h-16 flex items-center justify-between px-4">
          <div className="font-serif font-bold text-xl tracking-tight text-indigo-900">Astro<span className="text-indigo-600">Pure</span></div>
          <div className="flex items-center gap-3">
-            {isPremium && <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-100 uppercase">Abonné</span>}
+            {isPremium && <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-100 uppercase tracking-tighter shadow-sm">Client Premium</span>}
             {!session && <button onClick={() => goToAuth(true)} className="text-sm font-semibold text-indigo-600 underline">Espace Membre</button>}
             {session && <button onClick={handleLogout} className="p-2 bg-slate-50 rounded-full text-slate-400 hover:text-slate-600 transition-colors"><LogOut size={18}/></button>}
          </div>
@@ -389,10 +397,10 @@ export default function App() {
       
       <main className="pt-2">{renderContent()}</main>
 
-      {/* BULLE DE CHAT NOTIFICATION */}
+      {/* BULLE DE CHAT NOTIFICATION CLASSIQUE */}
       {canShowNotif && (
-        <div className="fixed bottom-20 right-4 z-[60] flex items-end gap-2 animate-in slide-in-from-right-5 slide-in-from-bottom-5 duration-700">
-          <div className="relative bg-white shadow-2xl border border-slate-100 rounded-2xl rounded-br-none p-3 max-w-[200px] mb-8 ring-1 ring-black/5">
+        <div className="fixed bottom-20 right-4 z-[60] flex items-end gap-2 animate-in slide-in-from-bottom-5 duration-700">
+          <div className="relative bg-white shadow-2xl border border-slate-100 rounded-2xl rounded-br-none p-3 max-w-[200px] mb-8">
             <p className="text-[11px] font-bold text-indigo-600 mb-0.5 uppercase tracking-tighter">{randomPsychic?.name}</p>
             <p className="text-[12px] text-slate-700 leading-tight italic font-medium">"{randomPsychic?.hook}"</p>
             <div className="absolute bottom-[-8px] right-0 w-0 h-0 border-l-[10px] border-l-transparent border-t-[10px] border-t-white"></div>
@@ -400,7 +408,7 @@ export default function App() {
 
           <button 
             onClick={() => { setActiveTab('voyance'); setSelectedPsychic(randomPsychic); setShowChatNotif(false); }}
-            className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-600 flex items-center justify-center overflow-hidden hover:scale-110 transition-transform active:scale-95"
+            className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-600 overflow-hidden hover:scale-110 transition-transform active:scale-95"
           >
             <img src={randomPsychic?.image} className="w-full h-full object-cover" alt={randomPsychic?.name} />
             <div className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center">
