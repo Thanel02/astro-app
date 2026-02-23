@@ -40,9 +40,9 @@ const ZODIAC_SIGNS = [
 ];
 
 const VOYANTES = [
-  { id: 'alma', name: 'Mère Alma', desc: 'La sagesse ancestrale.', style: 'Bienveillante.', image: '🌿' },
-  { id: 'luna', name: 'Luna Star', desc: 'Astrologue moderne.', style: 'Dynamique.', image: '🔮' },
-  { id: 'cosmos', name: 'Oracle X', desc: 'Conscience quantique.', style: 'Mystérieux.', image: '🌌' }
+  { id: 'alma', name: 'Mère Alma', desc: 'La sagesse ancestrale.', style: 'Bienveillante.', image: '🌿', hook: "J'ai un message pour vous..." },
+  { id: 'luna', name: 'Luna Star', desc: 'Astrologue moderne.', style: 'Dynamique.', image: '🔮', hook: "Tes astres bougent ! On regarde ?" },
+  { id: 'cosmos', name: 'Oracle X', desc: 'Conscience quantique.', style: 'Mystérieux.', image: '🌌', hook: "Fréquence inhabituelle détectée..." }
 ];
 
 // --- COMPOSANTS UI ---
@@ -283,13 +283,13 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
 
-  // LOGIQUE BULLE DE CHAT
-  const [showBubble, setShowBubble] = useState(false);
+  // LOGIQUE CHAT NOTIF
+  const [showChatNotif, setShowChatNotif] = useState(false);
   const [randomPsychic, setRandomPsychic] = useState(null);
 
   useEffect(() => {
     setRandomPsychic(VOYANTES[Math.floor(Math.random() * VOYANTES.length)]);
-    const timer = setTimeout(() => setShowBubble(true), 5000);
+    const timer = setTimeout(() => setShowChatNotif(true), 5000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -333,8 +333,7 @@ export default function App() {
     }
   };
 
-  // On affiche la bulle uniquement si on n'est pas déjà en train de chatter
-  const canShowBubble = showBubble && activeTab === 'horoscope' && !selectedSign && viewState === 'list';
+  const canShowNotif = showChatNotif && activeTab === 'horoscope' && !selectedSign && viewState === 'list';
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-20">
@@ -349,22 +348,28 @@ export default function App() {
       
       <main className="pt-4">{renderContent()}</main>
 
-      {/* BULLE DE CHAT DISCRÈTE */}
-      {canShowBubble && (
-        <button 
-          onClick={() => { setActiveTab('voyance'); setSelectedPsychic(randomPsychic); setShowBubble(false); }}
-          className="fixed bottom-20 right-6 z-[60] flex items-center gap-2 group animate-in slide-in-from-bottom-4 duration-500"
-        >
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-xl border border-slate-100 text-xs font-medium text-slate-600 hidden md:block">
-            Besoin d'un conseil ? ✨
+      {/* BULLE DE CHAT STYLE NOTIFICATION MESSAGERIE */}
+      {canShowNotif && (
+        <div className="fixed bottom-20 right-4 z-[60] flex items-end gap-2 animate-in slide-in-from-bottom-5 duration-500">
+          {/* La bulle de texte */}
+          <div className="relative bg-white shadow-2xl border border-slate-100 rounded-2xl rounded-br-none p-3 max-w-[180px] mb-8">
+            <p className="text-[11px] font-bold text-indigo-600 mb-1">{randomPsychic?.name}</p>
+            <p className="text-[12px] text-slate-700 leading-tight">{randomPsychic?.hook}</p>
+            {/* Petit triangle de la bulle */}
+            <div className="absolute bottom-[-8px] right-0 w-0 h-0 border-l-[10px] border-l-transparent border-t-[10px] border-t-white shadow-sm"></div>
           </div>
-          <div className="relative">
-            <div className="w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-500 flex items-center justify-center text-3xl hover:scale-110 transition-transform">
-              {randomPsychic?.image}
+
+          {/* L'avatar cliquable */}
+          <button 
+            onClick={() => { setActiveTab('voyance'); setSelectedPsychic(randomPsychic); setShowChatNotif(false); }}
+            className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-500 flex items-center justify-center text-3xl hover:scale-110 transition-transform"
+          >
+            {randomPsychic?.image}
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center">
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
-          </div>
-        </button>
+          </button>
+        </div>
       )}
 
       <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 h-16 flex items-center justify-around z-50 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
