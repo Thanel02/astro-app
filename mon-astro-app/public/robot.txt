@@ -1,0 +1,6 @@
+# Autorise tous les robots (Google, Bing, etc.) à explorer le site
+User-agent: *
+Allow: /
+
+# Indique où se trouve le plan du site
+Sitemap: https://astro-app-murex.vercel.app/
