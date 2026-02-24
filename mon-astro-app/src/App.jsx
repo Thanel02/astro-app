@@ -45,7 +45,7 @@ const VOYANTES = [
     desc: 'Guide spirituelle maternelle et enveloppante.', 
     style: 'Bienveillante et Douce', image: '/caroline-voyante-astropure.png', 
     hook: "Je sens une ombre sur votre cœur...", 
-    welcome: "Bonjour mon enfant. Je sens que quelque chose te tracasse... Je suis là pour t'accompagner." 
+    welcome: "Bonjour mon enfant. Je sens que quelque chose te tracasse... Je suis là pour t'agner." 
   },
   { 
     id: 'luna', name: 'Luna', 
@@ -83,28 +83,28 @@ const LegalModal = ({ isOpen, onClose, type }) => {
         <div className="space-y-4 text-sm text-slate-600 text-left">
           <section>
             <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-2">Éditeur du site</h4>
-            <p>Le site AstroPure est édité par <strong>Altéo Consulting</strong>, SIRET 99335347300016.</p>
-            <p>Siège : 2 RUE NOTRE-DAME DES VICTOIRES, 75002 PARIS.</p>
+            <p>Le site AstroPure est édité par la société <strong>Altéo Consulting</strong>, immatriculée au RCS sous le numéro <strong>SIRET 993 353 473 00016</strong>.</p>
+            <p>Siège social : 2 RUE NOTRE-DAME DES VICTOIRES, 75002 PARIS.</p>
           </section>
           <section>
             <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-2">Hébergeur</h4>
             <p>Vercel Inc., 340 S Lemon Ave #1135, Walnut, CA 91789, USA.</p>
           </section>
-          <section className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
+          <section className="bg-slate-50 p-3 rounded-xl border border-slate-100">
             <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-1">Contact SAV</h4>
-            <p className="font-medium text-indigo-600">{CONTACT_EMAIL}</p>
+            <p className="flex items-center gap-2 font-medium text-indigo-600"><Mail size={14}/> {CONTACT_EMAIL}</p>
           </section>
         </div>
       )
     },
     cgu: {
-      title: "CGU & Confidentialité",
+      title: "CGU & Politique de Confidentialité",
       text: (
         <div className="space-y-4 text-sm text-slate-600 text-left">
           <h4 className="font-bold text-indigo-900 border-b pb-1">Confidentialité (RGPD)</h4>
-          <p>Collecte : E-mail, statut Premium, historique chat. Données traitées via Supabase et Stripe. Droit de suppression sur simple demande.</p>
+          <p>Collecte : E-mail, statut Premium, historique chat. Paiements via Stripe. Droit de suppression via {CONTACT_EMAIL}.</p>
           <h4 className="font-bold text-indigo-900 border-b pb-1 mt-4">Conditions (CGU)</h4>
-          <p>Prix : <strong>{PRICE_TEXT}</strong>. Service de divertissement pur. Pas de remboursement après exécution.</p>
+          <p>Prix : <strong>{PRICE_TEXT}</strong>. Service de divertissement. Aucun remboursement après déblocage. Majeurs (+18) uniquement.</p>
         </div>
       )
     }
@@ -120,7 +120,7 @@ const LegalModal = ({ isOpen, onClose, type }) => {
   );
 };
 
-// --- AUTH ---
+// --- AUTHENTIFICATION ---
 const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -148,20 +148,78 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
       <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-100 relative">
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400"><X size={20}/></button>
         <h2 className="text-2xl font-bold text-center mb-2 font-serif text-indigo-900">{isLoginMode ? 'Connexion' : 'Inscription'}</h2>
-        <p className="text-center text-xs text-slate-400 mb-6">{isLoginMode ? 'Accédez à votre espace' : `Débloquez l'accès pour ${PRICE_TEXT}`}</p>
+        <p className="text-center text-xs text-slate-400 mb-6">{isLoginMode ? 'Heureuse de vous revoir' : `Accédez à votre espace (${PRICE_TEXT})`}</p>
         {error && <div className="bg-red-50 text-red-600 p-3 rounded text-xs mb-4">{error}</div>}
         <div className="space-y-4">
-          <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500"/>
-          <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500"/>
+          <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500"/>
+          <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500"/>
           <Button onClick={handleAuth} disabled={loading} className="w-full">{loading ? <Loader2 className="animate-spin"/> : "Valider"}</Button>
         </div>
-        <div className="mt-6 text-center text-sm font-medium"><button onClick={onSwitchToLogin} className="text-indigo-600 underline">{isLoginMode ? "Créer un compte" : 'Déjà inscrit ? Connexion'}</button></div>
+        <div className="mt-6 text-center text-sm font-medium"><button onClick={onSwitchToLogin} className="text-indigo-600 underline">{isLoginMode ? "S'inscrire" : 'Déjà membre ? Se connecter'}</button></div>
       </div>
     </div>
   );
 };
 
-// --- CHAT ---
+// --- HOROSCOPE ---
+const ReadingView = ({ sign, isPremium, onGoBack, onAction }) => {
+  const [horoscope, setHoroscope] = useState(null);
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.from('weekly_horoscopes').select('*').eq('sign_id', sign.name).order('week_start_date', { ascending: false }).limit(1).single()
+      .then(({data}) => setHoroscope(data));
+  }, [sign]);
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <button onClick={onGoBack} className="flex items-center text-slate-400 mb-6 font-medium"><ArrowLeft size={18} className="mr-2" /> Retour</button>
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 relative">
+        <h2 className="text-2xl font-serif font-bold text-slate-900 mb-4">{sign.icon} {sign.name}</h2>
+        <p className="text-slate-700 leading-relaxed mb-6 italic text-lg">"{horoscope?.intro || "Les astres vous préparent un message..."}"</p>
+        <div className="space-y-6">
+          <div><h3 className="font-bold text-rose-600 mb-1 border-b border-rose-100 pb-1 uppercase tracking-widest text-[10px]">Cœur</h3><p className="text-sm text-slate-600 leading-relaxed">{horoscope?.love || "Analyse en cours..."}</p></div>
+          <div><h3 className="font-bold text-emerald-700 mb-1 border-b border-emerald-100 pb-1 uppercase tracking-widest text-[10px]">Travail</h3><p className="text-sm text-slate-600 leading-relaxed">{horoscope?.work || "Analyse en cours..."}</p></div>
+          {!isPremium ? (
+            <div className="p-6 bg-slate-50 rounded-2xl border border-indigo-100 text-center relative mt-6 animate-in fade-in">
+              <Lock className="mx-auto text-indigo-400 mb-2" size={24}/>
+              <p className="text-sm font-medium text-slate-600 mb-4 uppercase">Débloquez <strong>Famille</strong> et <strong>Chance</strong></p>
+              <Button onClick={onAction} className="w-full uppercase tracking-widest text-[10px] font-bold">Accès Premium ({PRICE_TEXT})</Button>
+            </div>
+          ) : (
+            <>
+              <div className="animate-in fade-in duration-700"><h3 className="font-bold text-indigo-600 mb-1 border-b border-indigo-100 pb-1 uppercase tracking-widest text-[10px]">Famille</h3><p className="text-sm text-slate-600 leading-relaxed">{horoscope?.family || "L'harmonie sera présente."}</p></div>
+              <div className="animate-in fade-in duration-1000"><h3 className="font-bold text-amber-600 mb-1 border-b border-amber-100 pb-1 uppercase tracking-widest text-[10px]">Signaux de Chance</h3><p className="text-sm text-slate-600 leading-relaxed">{horoscope?.luck || "Une belle opportunité arrive."}</p></div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- VOYANCE (PRÉSENTATION ANCIEN STYLE REPRISE) ---
+const PsychicSelectionView = ({ onSelectPsychic, busyId }) => (
+  <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="text-center mb-10"><h1 className="text-3xl font-serif font-bold text-slate-900">Voyance en Direct</h1></div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-12">
+      {VOYANTES.map((p) => {
+        const isBusy = p.id === busyId;
+        return (
+          <div key={p.id} onClick={() => !isBusy && onSelectPsychic(p)} className={`bg-white rounded-3xl p-6 text-center border shadow-sm transition-all ${isBusy ? 'opacity-80' : 'cursor-pointer hover:border-indigo-300'}`}>
+            <img src={p.image} className={`w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md ${isBusy ? 'grayscale' : ''}`} />
+            <h3 className="font-bold text-slate-800 text-lg">{p.name}</h3>
+            <p className="text-xs text-slate-400 italic mb-4">{p.style}</p>
+            <button className={`w-full mt-4 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${isBusy ? 'bg-slate-50 text-slate-300' : 'bg-indigo-600 text-white'}`}>
+              {isBusy ? 'Occupée' : 'Consulter'}
+            </button>
+          </div>
+        )
+      })}
+    </div>
+  </div>
+);
+
+// --- CHAT SYSTEM ---
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [messages, setMessages] = useState([{ role: 'assistant', content: psychic.welcome }]);
   const [input, setInput] = useState('');
@@ -169,18 +227,19 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [limitReached, setLimitReached] = useState(false);
   const scrollRef = useRef(null);
 
+  const userCount = messages.filter(m => m.role === 'user').length;
+  const chatLimit = !isPremium && userCount >= FREE_CHAT_LIMIT;
+
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || limitReached || loading) return;
-    
+    if (!input.trim() || chatLimit || loading) return;
     const userMsg = input;
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setInput('');
     setLoading(true);
 
     try {
-      // ENVOI AVEC TOUTES LES INFOS REQUISES PAR TON WORKFLOW N8N
       const response = await fetch(N8N_CHAT_WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -191,19 +250,15 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
           isPremium: isPremium
         })
       });
-
       const data = await response.json();
-
-      // GESTION DE LA LIMITE N8N
       if (data.error === 'LIMIT_REACHED') {
         setLimitReached(true);
         setMessages(prev => [...prev, { role: 'assistant', content: "Le voile se referme... Pour continuer, rejoignez nos membres Premium." }]);
       } else {
-        // ON UTILISE LE CHAMP 'TEXT' COMME DÉFINI DANS TON RESPOND TO WEBHOOK1
         setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Les astres sont mystérieux..." }]);
       }
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Les astres sont silencieux. Vérifiez votre connexion." }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Connexion interrompue. Réessayez." }]);
     } finally { setLoading(false); }
   };
 
@@ -224,18 +279,18 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         ))}
         {loading && <div className="flex justify-start"><div className="bg-white p-3 rounded-2xl border"><Loader2 className="animate-spin text-indigo-400" size={18}/></div></div>}
         <div ref={scrollRef} />
-        {limitReached && (
+        {(chatLimit || limitReached) && (
           <div className="bg-indigo-600 text-white p-6 rounded-2xl shadow-xl text-center space-y-3 animate-in fade-in slide-in-from-bottom-4">
             <Sparkles className="mx-auto" />
-            <p className="text-xs font-bold uppercase tracking-widest">Limite de 3 messages atteinte</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest">Limite de 3 messages atteinte</p>
             <Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 font-bold uppercase text-[10px]">Passer en Premium ({PRICE_TEXT})</Button>
           </div>
         )}
       </div>
-      {!limitReached && (
+      {!chatLimit && !limitReached && (
         <div className="p-4 border-t bg-white flex gap-2">
-          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Écrivez ici..." className="flex-1 bg-slate-50 rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500" />
-          <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-xl active:scale-90"><Send size={18}/></button>
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question..." className="flex-1 bg-slate-50 rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500" />
+          <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-xl active:scale-90 transition-transform"><Send size={18}/></button>
         </div>
       )}
     </div>
@@ -252,8 +307,11 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
   const [modalType, setModalType] = useState(null);
+  const [showChatNotif, setShowChatNotif] = useState(false);
+  const [busyPsychicId] = useState('oracle');
 
   useEffect(() => {
+    const timer = setTimeout(() => setShowChatNotif(true), 5000);
     if (!supabase) return;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
@@ -263,7 +321,7 @@ export default function App() {
         });
       } else { setIsPremium(false); }
     });
-    return () => subscription.unsubscribe();
+    return () => { subscription.unsubscribe(); clearTimeout(timer); };
   }, []);
 
   const handleUnlock = () => {
@@ -274,31 +332,32 @@ export default function App() {
   return (
     <div className="min-h-[100dvh] bg-slate-50 text-slate-900 flex flex-col">
       <Helmet><title>AstroPure | Horoscope & Voyance</title></Helmet>
+      
       <nav className="bg-white/80 backdrop-blur-md border-b sticky top-0 z-50 h-16 flex items-center justify-between px-4">
-          <div className="font-serif font-bold text-xl text-indigo-900 cursor-pointer" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); }}>AstroPure</div>
-          {!session ? <button onClick={() => { setIsLoginMode(true); setViewState('auth'); }} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 uppercase tracking-widest">Compte</button> : <button onClick={() => supabase.auth.signOut()} className="p-2 text-slate-400"><LogOut size={18}/></button>}
+        <div className="font-serif font-bold text-xl text-indigo-900 cursor-pointer" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); }}>AstroPure</div>
+        {!session ? (
+          <button onClick={() => { setIsLoginMode(true); setViewState('auth'); }} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 uppercase tracking-widest">Compte</button>
+        ) : (
+          <div className="flex items-center gap-3">
+            {isPremium && <span className="text-[9px] bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full border border-amber-100 font-bold uppercase">Abonné</span>}
+            <button onClick={() => supabase.auth.signOut()} className="p-2 text-slate-400"><LogOut size={18}/></button>
+          </div>
+        )}
       </nav>
       
       <main className="flex-1 pb-24 overflow-y-auto">
         {viewState === 'auth' ? <AuthView isLoginMode={isLoginMode} onAuthSuccess={() => setViewState('list')} onSwitchToLogin={() => setIsLoginMode(!isLoginMode)} onCancel={() => setViewState('list')} /> : (
           activeTab === 'horoscope' ? (
-            selectedSign ? (
-              <div className="max-w-2xl mx-auto p-4 animate-in fade-in">
-                <button onClick={() => setSelectedSign(null)} className="mb-4 flex items-center text-slate-400"><ArrowLeft size={18} className="mr-2"/>Retour</button>
-                <div className="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-                  <h2 className="text-2xl font-serif font-bold">{selectedSign.icon} {selectedSign.name}</h2>
-                  <div className="space-y-4">
-                    <p className="text-sm font-bold text-rose-600 border-b border-rose-100 uppercase tracking-widest text-[10px]">Cœur</p>
-                    <p className="text-sm text-slate-600">Les astres favorisent vos rencontres cette semaine.</p>
-                    <p className="text-sm font-bold text-emerald-700 border-b border-emerald-100 uppercase tracking-widest text-[10px]">Travail</p>
-                    <p className="text-sm text-slate-600">Une opportunité professionnelle se dessine dès mardi.</p>
-                    {!isPremium && <div className="p-4 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Accédez à votre horoscope <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={handleUnlock} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
-                  </div>
+            selectedSign ? <ReadingView sign={selectedSign} isPremium={isPremium} onGoBack={() => setSelectedSign(null)} onAction={handleUnlock} /> : (
+              <div className="max-w-5xl mx-auto px-4 py-8 text-center">
+                <h1 className="text-3xl font-serif text-slate-900 font-bold mb-10">Horoscope Hebdomadaire</h1>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-12">
+                  {ZODIAC_SIGNS.map(s => <div key={s.id} onClick={() => setSelectedSign(s)} className="bg-white p-6 rounded-2xl shadow-sm text-center border cursor-pointer hover:border-indigo-300 transition-all"><div className="text-4xl mb-2">{s.icon}</div><div className="font-bold">{s.name}</div></div>)}
                 </div>
               </div>
-            ) : <div className="p-4 grid grid-cols-2 gap-4 max-w-4xl mx-auto">{ZODIAC_SIGNS.map(s => <div key={s.id} onClick={() => setSelectedSign(s)} className="bg-white p-6 rounded-2xl shadow-sm text-center border cursor-pointer hover:border-indigo-300"><div className="text-4xl mb-2">{s.icon}</div><div className="font-bold">{s.name}</div></div>)}</div>
+            )
           ) : (
-            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={handleUnlock} session={session} /> : <div className="p-4 grid gap-4 max-w-2xl mx-auto">{VOYANTES.map(v => <div key={v.id} onClick={() => setSelectedPsychic(v)} className="bg-white p-6 rounded-3xl border flex items-center gap-4 cursor-pointer hover:shadow-md transition-all"><img src={v.image} className="w-16 h-16 rounded-full object-cover" /><div><div className="font-bold">{v.name}</div><div className="text-xs text-slate-400">{v.style}</div></div></div>)}</div>
+            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={handleUnlock} session={session} /> : <PsychicSelectionView onSelectPsychic={setSelectedPsychic} busyId={busyPsychicId} />
           )
         )}
       </main>
@@ -311,12 +370,27 @@ export default function App() {
             <button onClick={() => setModalType('cgu')}>CGU & Confidentialité</button>
           </div>
           <p>SAV : {CONTACT_EMAIL}</p>
+          <div className="flex justify-center items-center gap-1 font-bold text-indigo-500 uppercase"><ShieldCheck size={14}/> Sécurisé par Stripe</div>
         </div>
       </footer>
 
-      <div className="fixed bottom-0 left-0 w-full bg-white border-t h-16 flex items-center justify-around z-50">
-        <button onClick={() => { setActiveTab('horoscope'); setViewState('list'); }} className={`flex flex-col items-center gap-1 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}><Moon size={22}/><span className="text-[9px] font-bold">HOROSCOPE</span></button>
-        <button onClick={() => { setActiveTab('voyance'); setViewState('list'); }} className={`flex flex-col items-center gap-1 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}><MessageCircle size={22}/><span className="text-[9px] font-bold">VOYANCE</span></button>
+      {showChatNotif && activeTab === 'horoscope' && !selectedSign && viewState === 'list' && (
+        <div className="fixed bottom-24 right-4 z-[45] flex items-end gap-2 animate-in slide-in-from-right-5 duration-700">
+          <div className="relative bg-white shadow-2xl border border-slate-100 rounded-2xl rounded-br-none p-3 max-w-[190px] mb-8">
+            <p className="text-[10px] font-bold text-indigo-600 mb-0.5 uppercase">{VOYANTES[0].name}</p>
+            <p className="text-[11px] text-slate-700 leading-tight italic">"{VOYANTES[0].hook}"</p>
+            <div className="absolute bottom-[-8px] right-0 w-0 h-0 border-l-[10px] border-l-transparent border-t-[10px] border-t-white"></div>
+          </div>
+          <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(VOYANTES[0]); setShowChatNotif(false); }} className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-600 overflow-hidden active:scale-95 transition-all">
+            <img src={VOYANTES[0].image} className="w-full h-full object-cover" />
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center text-[10px] text-white font-bold animate-pulse">1</div>
+          </button>
+        </div>
+      )}
+
+      <div className="fixed bottom-0 left-0 w-full bg-white border-t h-16 flex items-center justify-around z-50 shadow-lg">
+        <button onClick={() => { setActiveTab('horoscope'); setViewState('list'); setSelectedSign(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}><Moon size={22}/><span className="text-[9px] font-bold">HOROSCOPE</span></button>
+        <button onClick={() => { setActiveTab('voyance'); setViewState('list'); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}><MessageCircle size={22}/><span className="text-[9px] font-bold">VOYANCE</span></button>
       </div>
 
       <LegalModal isOpen={!!modalType} onClose={() => setModalType(null)} type={modalType} />
