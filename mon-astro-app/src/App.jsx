@@ -61,7 +61,7 @@ const LegalModal = ({ isOpen, onClose, type, isPremium, onManage }) => {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
       <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95">
-        <div className="p-6 border-b flex justify-between items-center"><h3 className="font-bold text-indigo-900">{type === 'mentions' ? 'Mentions Légales' : 'CGU & Confidentialité'}</h3><button onClick={onClose}><X size={20}/></button></div>
+        <div className="p-6 border-b flex justify-between items-center"><h3 className="font-bold text-indigo-900">{type === 'mentions' ? 'Mentions Légales' : 'CGU & Politique de Confidentialité'}</h3><button onClick={onClose}><X size={20}/></button></div>
         <div className="p-8 max-h-[60vh] overflow-y-auto text-sm text-slate-600 space-y-4 text-left">
           {type === 'mentions' ? (
             <>
@@ -105,10 +105,12 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
         await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/?recovery=true` });
         setMessage("Lien envoyé par e-mail !");
       } else if (isLoginMode) {
-        await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
         onAuthSuccess();
       } else {
-        const { data } = await supabase.auth.signUp({ email, password });
+        const { error, data } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
         if (data?.user) await supabase.from('profiles').insert([{ id: data.user.id, is_premium: false }]);
         onAuthSuccess();
       }
@@ -147,21 +149,38 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
   useEffect(() => {
     const up = () => { if (window.visualViewport) { setViewportHeight(`${window.visualViewport.height}px`); setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 150); } };
-    window.visualViewport?.addEventListener('resize', up); up();
-    return () => window.visualViewport?.removeEventListener('resize', up);
+    window.visualViewport?.addEventListener('resize', up);
+    window.visualViewport?.addEventListener('scroll', up);
+    up();
+    return () => {
+      window.visualViewport?.removeEventListener('resize', up);
+      window.visualViewport?.removeEventListener('scroll', up);
+    };
   }, []);
+
+  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages, loading]);
 
   const handleSend = async () => {
     if (!input.trim() || loading || limitReached) return;
+    const userMsg = input;
     const userCount = messages.filter(m => m.role === 'user').length;
     if (!isPremium && userCount >= FREE_CHAT_LIMIT) { setLimitReached(true); return; }
-    setMessages(prev => [...prev, { role: 'user', content: input }]);
-    setInput(''); setLoading(true);
+
+    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    setInput('');
+    setLoading(true);
+    ReactGA.event({ category: "Chat", action: "Message Sent", label: psychic.name });
+
     try {
-      const res = await fetch(N8N_CHAT_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: input, voyanteId: psychic.id, userId: session?.user?.id || 'anonymous', isPremium }) });
-      const data = await res.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Précisez votre pensée..." }]);
-    } catch (e) { setMessages(prev => [...prev, { role: 'assistant', content: "Erreur de connexion." }]); }
+      const response = await fetch(N8N_CHAT_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMsg, voyanteId: psychic.id, userId: session?.user?.id || 'anonymous', isPremium })
+      });
+      const data = await response.json();
+      if (data.error === 'LIMIT_REACHED') { setLimitReached(true); }
+      else { setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Pouvez-vous préciser ?" }]); }
+    } catch (e) { setMessages(prev => [...prev, { role: 'assistant', content: "Problème de connexion." }]); }
     finally { setLoading(false); }
   };
 
@@ -173,14 +192,34 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         <h3 className="font-bold text-sm">{psychic.name}</h3>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/30">
-        {messages.map((m, i) => (<div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] p-3.5 rounded-2xl text-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border text-slate-700 rounded-bl-none'}`}>{m.content}</div></div>))}
-        {loading && <Loader2 className="animate-spin text-indigo-400 mx-auto" size={18}/>}
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border text-slate-700 rounded-bl-none'}`}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {loading && <div className="flex justify-start"><Loader2 className="animate-spin text-indigo-400" size={18}/></div>}
         <div ref={scrollRef} className="h-2" />
-        {limitReached && <div className="bg-indigo-600 text-white p-6 rounded-2xl text-center space-y-3"><Sparkles className="mx-auto" /><p className="text-xs font-bold uppercase">Limite de 3 messages atteinte</p><Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 text-[10px]">Premium ({PRICE_TEXT})</Button></div>}
+        {limitReached && (
+          <div className="bg-indigo-600 text-white p-6 rounded-2xl text-center space-y-3">
+            <Sparkles className="mx-auto" />
+            <p className="text-xs font-bold uppercase">Limite atteinte</p>
+            <Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 font-bold uppercase text-[10px]">Premium ({PRICE_TEXT})</Button>
+          </div>
+        )}
       </div>
       {!limitReached && (
         <div className="p-3 border-t bg-white flex gap-2 flex-shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Écrivez..." className="flex-1 bg-slate-50 rounded-xl px-4 py-3 text-[16px] outline-none" enterKeyHint="send" />
+          <input 
+            value={input} 
+            onChange={e=>setInput(e.target.value)} 
+            onKeyPress={e=>e.key==='Enter' && handleSend()} 
+            onFocus={() => setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 300)} 
+            placeholder="Écrivez..." 
+            className="flex-1 bg-slate-50 rounded-xl px-4 py-3 text-[16px] outline-none" 
+            enterKeyHint="send" 
+          />
           <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-xl"><Send size={20}/></button>
         </div>
       )}
@@ -209,28 +248,50 @@ export default function App() {
     const q = new URLSearchParams(window.location.search);
     if (q.get('recovery') === 'true') setViewState('recovery');
 
-    supabase.auth.onAuthStateChange((event, sess) => {
+    if (!supabase) return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
-      if (sess?.user) supabase.from('profiles').select('is_premium').eq('id', sess.user.id).single().then(({data}) => setIsPremium(!!data?.is_premium));
-      else setIsPremium(false);
+      if (sess?.user) {
+        supabase.from('profiles').select('is_premium').eq('id', sess.user.id).single().then(({data}) => setIsPremium(!!data?.is_premium));
+      } else {
+        setIsPremium(false);
+      }
     });
-    return () => clearTimeout(timer);
+    return () => { subscription.unsubscribe(); clearTimeout(timer); };
   }, []);
 
   useEffect(() => {
-    if (selectedSign) supabase.from('weekly_horoscopes').select('*').eq('sign_id', selectedSign.name).order('week_start_date', { ascending: false }).limit(1).single().then(({data}) => setHoroscope(data));
+    if (selectedSign && supabase) {
+      supabase.from('weekly_horoscopes').select('*').eq('sign_id', selectedSign.name).order('week_start_date', { ascending: false }).limit(1).single()
+        .then(({data}) => setHoroscope(data));
+      ReactGA.send({ hitType: "pageview", page: `/horoscope/${selectedSign.id}` });
+    }
   }, [selectedSign]);
 
+  const handleUnlock = () => {
+    ReactGA.event({ category: "Conversion", action: "Click Payment Button" });
+    if (!session) { 
+      setViewState('auth'); 
+      setIsLoginMode(false); 
+    } else { 
+      // ON AJOUTE L'ID POUR N8N
+      window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`; 
+    }
+  };
+
   const handleManageSubscription = () => {
-    alert(`Pour résilier votre abonnement, envoyez un email à ${CONTACT_EMAIL} avec votre adresse : ${session.user.email}. Résiliation traitée sous 24h.`);
+    alert(`Pour résilier votre abonnement, envoyez un email à ${CONTACT_EMAIL} avec votre adresse : ${session?.user?.email}. Résiliation traitée sous 24h.`);
   };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      <Helmet><title>AstroPure | Horoscope & Voyance</title><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/></Helmet>
+      <Helmet>
+        <title>AstroPure | Horoscope & Voyance</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/> 
+      </Helmet>
       
       <nav className="bg-white border-b h-16 flex items-center justify-between px-4 sticky top-0 z-50">
-        <div className="font-serif font-bold text-xl text-indigo-900 cursor-pointer" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); }}>AstroPure</div>
+        <div className="font-serif font-bold text-xl text-indigo-900 cursor-pointer" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); setHoroscope(null); }}>AstroPure</div>
         {!session ? <button onClick={() => { setIsLoginMode(true); setViewState('auth'); }} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full uppercase">Compte</button> : (
           <button onClick={() => supabase.auth.signOut()} className="p-2 text-slate-400"><LogOut size={18}/></button>
         )}
@@ -250,14 +311,14 @@ export default function App() {
                 <button onClick={() => { setSelectedSign(null); setHoroscope(null); }} className="mb-4 flex items-center text-slate-400"><ArrowLeft size={18} className="mr-2"/>Retour</button>
                 <div className="bg-white p-6 rounded-3xl border shadow-sm space-y-6">
                   <h2 className="text-2xl font-serif font-bold">{selectedSign.icon} {selectedSign.name}</h2>
-                  <p className="text-slate-700 italic text-lg">"{horoscope?.intro || "Les astres vous préparent un message..."}"</p>
+                  <p className="text-slate-700 leading-relaxed italic text-lg">"{horoscope?.intro || "Les astres vous préparent un message..."}"</p>
                   <div><h3 className="font-bold text-rose-600 border-b text-[10px] uppercase">Vie Sentimentale</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.love || "Analyse en cours..."}</p></div>
                   <div><h3 className="font-bold text-emerald-700 border-b text-[10px] uppercase">Vie Professionnelle</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.work || "Analyse en cours..."}</p></div>
-                  {!isPremium && <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Débloquez <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={() => window.location.href = STRIPE_LINK} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
+                  {!isPremium && <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Débloquez vos sections <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={handleUnlock} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
                   {isPremium && (
                     <>
-                      <div className="animate-in fade-in"><h3 className="font-bold text-indigo-600 border-b text-[10px] uppercase">Vie de Famille</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.family || "Chargement..."}</p></div>
-                      <div className="animate-in fade-in"><h3 className="font-bold text-amber-600 border-b text-[10px] uppercase">Signaux de Chance</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.luck || "Chargement..."}</p></div>
+                      <div className="animate-in fade-in duration-700"><h3 className="font-bold text-indigo-600 border-b text-[10px] uppercase">Vie de Famille</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.family || "Chargement..."}</p></div>
+                      <div className="animate-in fade-in duration-1000"><h3 className="font-bold text-amber-600 border-b text-[10px] uppercase">Signaux de Chance</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.luck || "Chargement..."}</p></div>
                     </>
                   )}
                 </div>
@@ -268,7 +329,7 @@ export default function App() {
               </div>
             )
           ) : (
-            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={() => window.location.href = STRIPE_LINK} session={session} /> : (
+            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={handleUnlock} session={session} /> : (
               <div className="max-w-4xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in">
                 {VOYANTES.map(p => {
                   const isBusy = p.id === busyPsychicId;
@@ -313,7 +374,7 @@ export default function App() {
             <p className="text-[10px] font-bold text-indigo-600 uppercase">{VOYANTES[0].name}</p>
             <p className="text-[11px] text-slate-700 italic">"{VOYANTES[0].hook}"</p>
           </div>
-          <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(VOYANTES[0]); setShowChatNotif(false); }} className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-600 overflow-hidden active:scale-95 transition-all">
+          <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(VOYANTES[0]); setShowChatNotif(false); }} className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-600 overflow-hidden">
             <img src={VOYANTES[0].image} className="w-full h-full object-cover" />
             <div className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center text-[10px] text-white font-bold animate-pulse">1</div>
           </button>
