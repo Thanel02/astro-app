@@ -41,25 +41,25 @@ const ZODIAC_SIGNS = [
 
 const VOYANTES = [
   { 
-    id: 'caroline', name: 'Caroline', 
-    desc: 'Médium pur de naissance.', 
-    style: 'Sincère et Directe', image: '/caroline-voyante-astropure.png', 
-    hook: "J'ai un flash urgent vous concernant...", 
-    welcome: "Bonjour, je suis Caroline. Je ressens une interrogation profonde en vous. Je vous écoute." 
+    id: 'alma', name: 'Mère Alma', 
+    desc: 'Guide spirituelle maternelle et enveloppante.', 
+    style: 'Bienveillante et Douce', image: '/caroline-voyante-astropure.png', 
+    hook: "Je sens une ombre sur votre cœur...", 
+    welcome: "Bonjour mon enfant. Je sens que quelque chose te tracasse... Je suis là pour t'accompagner." 
   },
   { 
-    id: 'nathalie', name: 'Nathalie', 
-    desc: 'Cartomancienne de 60 ans.', 
-    style: 'Chaleureuse et Précise', image: '/nathalie-voyante-astropure.png', 
-    hook: "Votre tirage de cartes révèle un tournant...", 
-    welcome: "Bienvenue mon enfant. Mes cartes sont prêtes à éclairer votre chemin." 
+    id: 'luna', name: 'Luna', 
+    desc: 'Astrologue moderne, franche et complice.', 
+    style: 'Analytique et Directe', image: '/nathalie-voyante-astropure.png', 
+    hook: "Vos astres sont en plein mouvement...", 
+    welcome: "Salut ! Je capte une énergie particulière aujourd'hui. C'est lié à ton passé ou c'est nouveau ?" 
   },
   { 
-    id: 'pierre', name: 'Maître Pierre', 
-    desc: 'Astrologue et Numérologue certifié.', 
-    style: 'Analytique et Expert', image: '/pierre-voyant-astropure.png', 
-    hook: "Un transit planétaire majeur impacte votre ciel...", 
-    welcome: "Bonjour. L'étude de vos astres révèle une période charnière." 
+    id: 'oracle', name: 'Oracle X', 
+    desc: 'Conscience analytique supérieure.', 
+    style: 'Lucide et Impartial', image: '/pierre-voyant-astropure.png', 
+    hook: "Votre trajectoire présente une dissonance...", 
+    welcome: "Analyse en cours. Il y a une dissonance dans votre parcours actuel. Je vous écoute." 
   }
 ];
 
@@ -83,31 +83,28 @@ const LegalModal = ({ isOpen, onClose, type }) => {
         <div className="space-y-4 text-sm text-slate-600 text-left">
           <section>
             <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-2">Éditeur du site</h4>
-            <p>Le site AstroPure est édité par la société <strong>Altéo Consulting</strong>, immatriculée au RCS sous le numéro <strong>SIRET 993 353 473 00016</strong>.</p>
-            <p>Siège social : 2 RUE NOTRE-DAME DES VICTOIRES, 75002 PARIS.</p>
+            <p>Le site AstroPure est édité par <strong>Altéo Consulting</strong>, SIRET 99335347300016.</p>
+            <p>Siège : 2 RUE NOTRE-DAME DES VICTOIRES, 75002 PARIS.</p>
           </section>
           <section>
             <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-2">Hébergeur</h4>
             <p>Vercel Inc., 340 S Lemon Ave #1135, Walnut, CA 91789, USA.</p>
           </section>
-          <section className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+          <section className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
             <h4 className="font-bold text-indigo-900 uppercase text-[10px] mb-1">Contact SAV</h4>
-            <p className="flex items-center gap-2 font-medium text-indigo-600"><Mail size={14}/> {CONTACT_EMAIL}</p>
+            <p className="font-medium text-indigo-600">{CONTACT_EMAIL}</p>
           </section>
         </div>
       )
     },
     cgu: {
-      title: "CGU & Politique de Confidentialité",
+      title: "CGU & Confidentialité",
       text: (
         <div className="space-y-4 text-sm text-slate-600 text-left">
-          <h4 className="font-bold text-indigo-900 border-b pb-1">Politique de Confidentialité (RGPD)</h4>
-          <p><strong>Collecte des données :</strong> Nous collectons votre e-mail (via Supabase), votre statut Premium et l'historique des messages. Vos données bancaires sont traitées exclusivement par <strong>Stripe</strong>.</p>
-          <p><strong>Conservation :</strong> Vos données sont conservées tant que votre compte est actif. Droit d'accès et suppression via {CONTACT_EMAIL}.</p>
-          <h4 className="font-bold text-indigo-900 border-b pb-1 mt-4">Conditions Générales d'Utilisation</h4>
-          <p><strong>Objet :</strong> AstroPure est un service de divertissement. Les réponses ne remplacent pas un conseil médical ou juridique.</p>
-          <p><strong>Prix :</strong> L'accès Premium est facturé <strong>{PRICE_TEXT}</strong>. Aucun remboursement après déblocage.</p>
-          <p><strong>Responsabilité :</strong> Altéo Consulting décline toute responsabilité. Service réservé aux majeurs (+18 ans).</p>
+          <h4 className="font-bold text-indigo-900 border-b pb-1">Confidentialité (RGPD)</h4>
+          <p>Collecte : E-mail, statut Premium, historique chat. Données traitées via Supabase et Stripe. Droit de suppression sur simple demande.</p>
+          <h4 className="font-bold text-indigo-900 border-b pb-1 mt-4">Conditions (CGU)</h4>
+          <p>Prix : <strong>{PRICE_TEXT}</strong>. Service de divertissement pur. Pas de remboursement après exécution.</p>
         </div>
       )
     }
@@ -123,7 +120,7 @@ const LegalModal = ({ isOpen, onClose, type }) => {
   );
 };
 
-// --- AUTHENTIFICATION ---
+// --- AUTH ---
 const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -150,108 +147,69 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
     <div className="flex items-center justify-center min-h-[70dvh] px-4">
       <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-100 relative">
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400"><X size={20}/></button>
-        <h2 className="text-2xl font-bold text-center mb-2 font-serif text-indigo-900">{isLoginMode ? 'Connexion' : 'Créer un compte'}</h2>
-        <p className="text-center text-xs text-slate-400 mb-6">{isLoginMode ? 'Heureuse de vous revoir' : `Inscrivez-vous pour votre accès complet (${PRICE_TEXT})`}</p>
+        <h2 className="text-2xl font-bold text-center mb-2 font-serif text-indigo-900">{isLoginMode ? 'Connexion' : 'Inscription'}</h2>
+        <p className="text-center text-xs text-slate-400 mb-6">{isLoginMode ? 'Accédez à votre espace' : `Débloquez l'accès pour ${PRICE_TEXT}`}</p>
         {error && <div className="bg-red-50 text-red-600 p-3 rounded text-xs mb-4">{error}</div>}
         <div className="space-y-4">
-          <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500"/>
-          <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500"/>
-          <Button onClick={handleAuth} disabled={loading} className="w-full">{loading ? <Loader2 className="animate-spin"/> : "Continuer"}</Button>
+          <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500"/>
+          <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500"/>
+          <Button onClick={handleAuth} disabled={loading} className="w-full">{loading ? <Loader2 className="animate-spin"/> : "Valider"}</Button>
         </div>
-        <div className="mt-6 text-center text-sm font-medium"><button onClick={onSwitchToLogin} className="text-indigo-600 underline">{isLoginMode ? "S'inscrire" : 'Déjà membre ? Se connecter'}</button></div>
+        <div className="mt-6 text-center text-sm font-medium"><button onClick={onSwitchToLogin} className="text-indigo-600 underline">{isLoginMode ? "Créer un compte" : 'Déjà inscrit ? Connexion'}</button></div>
       </div>
     </div>
   );
 };
 
-// --- HOROSCOPE READING ---
-const ReadingView = ({ sign, isPremium, onGoBack, onAction }) => {
-  const [horoscope, setHoroscope] = useState(null);
-  useEffect(() => {
-    if (!supabase) return;
-    supabase.from('weekly_horoscopes').select('*').eq('sign_id', sign.name).order('week_start_date', { ascending: false }).limit(1).single()
-      .then(({data}) => setHoroscope(data));
-  }, [sign]);
-
-  return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      <button onClick={onGoBack} className="flex items-center text-slate-400 mb-6 font-medium"><ArrowLeft size={18} className="mr-2" /> Retour</button>
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 relative">
-        <h2 className="text-2xl font-serif font-bold text-slate-900 mb-4">{sign.icon} {sign.name}</h2>
-        <p className="text-slate-700 leading-relaxed mb-6 italic text-lg">"{horoscope?.intro || "Les astres vous préparent un message..."}"</p>
-        
-        <div className="space-y-6">
-          <div><h3 className="font-bold text-rose-600 mb-1 border-b border-rose-100 pb-1 uppercase tracking-widest text-[10px]">Cœur</h3><p className="text-sm text-slate-600 leading-relaxed">{horoscope?.love || "Analyse en cours..."}</p></div>
-          <div><h3 className="font-bold text-emerald-700 mb-1 border-b border-emerald-100 pb-1 uppercase tracking-widest text-[10px]">Travail</h3><p className="text-sm text-slate-600 leading-relaxed">{horoscope?.work || "Analyse en cours..."}</p></div>
-
-          {!isPremium ? (
-            <div className="p-6 bg-slate-50 rounded-2xl border border-indigo-100 text-center relative mt-6 animate-in fade-in">
-              <Lock className="mx-auto text-indigo-400 mb-2" size={24}/>
-              <p className="text-sm font-medium text-slate-600 mb-4 uppercase">Débloquez vos prévisions <strong>Famille</strong> et <strong>Chance</strong></p>
-              <Button onClick={onAction} className="w-full uppercase tracking-widest text-[10px] font-bold">Débloquer ({PRICE_TEXT})</Button>
-            </div>
-          ) : (
-            <>
-              <div className="animate-in fade-in duration-700"><h3 className="font-bold text-indigo-600 mb-1 border-b border-indigo-100 pb-1 uppercase tracking-widest text-[10px]">Vie de Famille</h3><p className="text-sm text-slate-600 leading-relaxed">{horoscope?.family || "Une période d'harmonie s'annonce dans votre foyer."}</p></div>
-              <div className="animate-in fade-in duration-1000"><h3 className="font-bold text-amber-600 mb-1 border-b border-amber-100 pb-1 uppercase tracking-widest text-[10px]">Signaux de Chance</h3><p className="text-sm text-slate-600 leading-relaxed">{horoscope?.luck || "Une synchronicité forte va guider vos pas cette semaine."}</p></div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- CHAT SYSTEM ---
-const ChatView = ({ psychic, isPremium, onGoBack, onAction }) => {
+// --- CHAT ---
+const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [messages, setMessages] = useState([{ role: 'assistant', content: psychic.welcome }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
   const scrollRef = useRef(null);
-
-  const userCount = messages.filter(m => m.role === 'user').length;
-  const isLimitReached = !isPremium && userCount >= FREE_CHAT_LIMIT;
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || isLimitReached || loading) return;
+    if (!input.trim() || limitReached || loading) return;
     
     const userMsg = input;
-    const newMessages = [...messages, { role: 'user', content: userMsg }];
-    
-    setMessages(newMessages);
+    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setInput('');
     setLoading(true);
 
     try {
+      // ENVOI AVEC TOUTES LES INFOS REQUISES PAR TON WORKFLOW N8N
       const response = await fetch(N8N_CHAT_WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           message: userMsg, 
-          psychic: psychic.name, 
-          history: newMessages,
-          timestamp: new Date().toISOString()
+          voyanteId: psychic.id, 
+          userId: session?.user?.id || 'anonymous',
+          isPremium: isPremium
         })
       });
 
-      if (!response.ok) throw new Error("Erreur Webhook");
-      
       const data = await response.json();
-      // On cherche 'output' ou 'text' ou 'message' dans la réponse n8n
-      const botResponse = data.output || data.text || data.message || "Je ressens une vibration mystérieuse, mais les ondes sont faibles. Reposez-moi votre question.";
-      
-      setMessages(prev => [...prev, { role: 'assistant', content: botResponse }]);
+
+      // GESTION DE LA LIMITE N8N
+      if (data.error === 'LIMIT_REACHED') {
+        setLimitReached(true);
+        setMessages(prev => [...prev, { role: 'assistant', content: "Le voile se referme... Pour continuer, rejoignez nos membres Premium." }]);
+      } else {
+        // ON UTILISE LE CHAMP 'TEXT' COMME DÉFINI DANS TON RESPOND TO WEBHOOK1
+        setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Les astres sont mystérieux..." }]);
+      }
     } catch (e) {
-      console.error("Chat Error:", e);
-      setMessages(prev => [...prev, { role: 'assistant', content: "Les astres sont temporairement silencieux. Vérifiez votre connexion." }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Les astres sont silencieux. Vérifiez votre connexion." }]);
     } finally { setLoading(false); }
   };
 
   return (
     <div className="fixed inset-0 top-16 bottom-16 bg-white z-[40] flex flex-col md:max-w-2xl md:mx-auto shadow-xl">
-      <div className="flex items-center gap-4 py-3 px-4 border-b bg-white">
+      <div className="flex items-center gap-4 py-3 px-4 border-b">
         <button onClick={onGoBack} className="p-1.5 bg-slate-50 rounded-full"><ArrowLeft size={20}/></button>
         <img src={psychic.image} className="w-10 h-10 rounded-full object-cover" />
         <h3 className="font-bold text-sm">{psychic.name}</h3>
@@ -266,26 +224,25 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction }) => {
         ))}
         {loading && <div className="flex justify-start"><div className="bg-white p-3 rounded-2xl border"><Loader2 className="animate-spin text-indigo-400" size={18}/></div></div>}
         <div ref={scrollRef} />
-        {isLimitReached && (
+        {limitReached && (
           <div className="bg-indigo-600 text-white p-6 rounded-2xl shadow-xl text-center space-y-3 animate-in fade-in slide-in-from-bottom-4">
             <Sparkles className="mx-auto" />
-            <p className="text-xs opacity-90 leading-relaxed italic">"Une révélation majeure vous attend..."</p>
-            <p className="text-[10px] opacity-80 uppercase tracking-widest font-bold">Limite de messages gratuits atteinte</p>
-            <Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 border-none font-bold uppercase text-[10px]">Passer en Premium ({PRICE_TEXT})</Button>
+            <p className="text-xs font-bold uppercase tracking-widest">Limite de 3 messages atteinte</p>
+            <Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 font-bold uppercase text-[10px]">Passer en Premium ({PRICE_TEXT})</Button>
           </div>
         )}
       </div>
-      {!isLimitReached && (
+      {!limitReached && (
         <div className="p-4 border-t bg-white flex gap-2">
-          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question..." className="flex-1 bg-slate-50 rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500" />
-          <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-xl active:scale-90 transition-transform"><Send size={18}/></button>
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Écrivez ici..." className="flex-1 bg-slate-50 rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500" />
+          <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-xl active:scale-90"><Send size={18}/></button>
         </div>
       )}
     </div>
   );
 };
 
-// --- APP PRINCIPALE ---
+// --- APP ---
 export default function App() {
   const [activeTab, setActiveTab] = useState('horoscope'); 
   const [viewState, setViewState] = useState('list'); 
@@ -295,10 +252,8 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
   const [modalType, setModalType] = useState(null);
-  const [showChatNotif, setShowChatNotif] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowChatNotif(true), 5000);
     if (!supabase) return;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
@@ -306,9 +261,9 @@ export default function App() {
         supabase.from('profiles').select('is_premium').eq('id', sess.user.id).single().then(({data}) => {
           if (data?.is_premium) setIsPremium(true);
         });
-      }
+      } else { setIsPremium(false); }
     });
-    return () => { subscription.unsubscribe(); clearTimeout(timer); };
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleUnlock = () => {
@@ -317,7 +272,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-slate-50 text-slate-900 font-sans flex flex-col">
+    <div className="min-h-[100dvh] bg-slate-50 text-slate-900 flex flex-col">
       <Helmet><title>AstroPure | Horoscope & Voyance</title></Helmet>
       <nav className="bg-white/80 backdrop-blur-md border-b sticky top-0 z-50 h-16 flex items-center justify-between px-4">
           <div className="font-serif font-bold text-xl text-indigo-900 cursor-pointer" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); }}>AstroPure</div>
@@ -326,19 +281,36 @@ export default function App() {
       
       <main className="flex-1 pb-24 overflow-y-auto">
         {viewState === 'auth' ? <AuthView isLoginMode={isLoginMode} onAuthSuccess={() => setViewState('list')} onSwitchToLogin={() => setIsLoginMode(!isLoginMode)} onCancel={() => setViewState('list')} /> : (
-          activeTab === 'horoscope' ? (selectedSign ? <ReadingView sign={selectedSign} isPremium={isPremium} onGoBack={() => setSelectedSign(null)} onAction={handleUnlock} /> : <div className="p-4 grid grid-cols-2 gap-4 max-w-4xl mx-auto">{ZODIAC_SIGNS.map(s => <div key={s.id} onClick={() => setSelectedSign(s)} className="bg-white p-6 rounded-2xl shadow-sm text-center cursor-pointer border hover:border-indigo-300 transition-all"><div className="text-4xl mb-2">{s.icon}</div><div className="font-bold">{s.name}</div></div>)}</div>) : (selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={handleUnlock} /> : <div className="p-4 grid gap-4 max-w-2xl mx-auto">{VOYANTES.map(v => <div key={v.id} onClick={() => setSelectedPsychic(v)} className="bg-white p-6 rounded-3xl border flex items-center gap-4 cursor-pointer hover:shadow-md transition-all"><img src={v.image} className="w-16 h-16 rounded-full object-cover" /><div><div className="font-bold">{v.name}</div><div className="text-xs text-slate-400">{v.style}</div></div></div>)}</div>)
+          activeTab === 'horoscope' ? (
+            selectedSign ? (
+              <div className="max-w-2xl mx-auto p-4 animate-in fade-in">
+                <button onClick={() => setSelectedSign(null)} className="mb-4 flex items-center text-slate-400"><ArrowLeft size={18} className="mr-2"/>Retour</button>
+                <div className="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+                  <h2 className="text-2xl font-serif font-bold">{selectedSign.icon} {selectedSign.name}</h2>
+                  <div className="space-y-4">
+                    <p className="text-sm font-bold text-rose-600 border-b border-rose-100 uppercase tracking-widest text-[10px]">Cœur</p>
+                    <p className="text-sm text-slate-600">Les astres favorisent vos rencontres cette semaine.</p>
+                    <p className="text-sm font-bold text-emerald-700 border-b border-emerald-100 uppercase tracking-widest text-[10px]">Travail</p>
+                    <p className="text-sm text-slate-600">Une opportunité professionnelle se dessine dès mardi.</p>
+                    {!isPremium && <div className="p-4 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Accédez à votre horoscope <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={handleUnlock} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
+                  </div>
+                </div>
+              </div>
+            ) : <div className="p-4 grid grid-cols-2 gap-4 max-w-4xl mx-auto">{ZODIAC_SIGNS.map(s => <div key={s.id} onClick={() => setSelectedSign(s)} className="bg-white p-6 rounded-2xl shadow-sm text-center border cursor-pointer hover:border-indigo-300"><div className="text-4xl mb-2">{s.icon}</div><div className="font-bold">{s.name}</div></div>)}</div>
+          ) : (
+            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={handleUnlock} session={session} /> : <div className="p-4 grid gap-4 max-w-2xl mx-auto">{VOYANTES.map(v => <div key={v.id} onClick={() => setSelectedPsychic(v)} className="bg-white p-6 rounded-3xl border flex items-center gap-4 cursor-pointer hover:shadow-md transition-all"><img src={v.image} className="w-16 h-16 rounded-full object-cover" /><div><div className="font-bold">{v.name}</div><div className="text-xs text-slate-400">{v.style}</div></div></div>)}</div>
+          )
         )}
       </main>
 
       <footer className="bg-white border-t p-8 text-center text-[10px] text-slate-400 pb-32">
         <div className="max-w-4xl mx-auto space-y-4">
-          <p className="font-bold tracking-widest uppercase tracking-widest">Altéo Consulting</p>
+          <p className="font-bold tracking-widest uppercase">Altéo Consulting</p>
           <div className="flex justify-center gap-4 underline">
             <button onClick={() => setModalType('mentions')}>Mentions Légales</button>
             <button onClick={() => setModalType('cgu')}>CGU & Confidentialité</button>
           </div>
           <p>SAV : {CONTACT_EMAIL}</p>
-          <div className="flex justify-center items-center gap-1 font-bold text-indigo-500 uppercase"><ShieldCheck size={14}/> Sécurisé par Stripe</div>
         </div>
       </footer>
 
