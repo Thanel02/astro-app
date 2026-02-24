@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet';
 import { 
   Star, Moon, Sun, Lock, ChevronRight, User, Check, Sparkles, 
   ArrowLeft, Menu, X, LogOut, Loader2, MessageCircle, Send,
-  Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Clock, ShieldCheck, Mail
+  Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Clock, ShieldCheck, Mail, Key
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -108,26 +108,36 @@ const LegalModal = ({ isOpen, onClose, type }) => {
   );
 };
 
-// --- AUTH ---
+// --- AUTH (AVEC MOT DE PASSE OUBLIÉ) ---
 const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
+  const [resetMode, setResetMode] = useState(false);
 
   const handleAuth = async () => {
-    setLoading(true); setError(null);
+    setLoading(true); setError(null); setMessage(null);
     try {
       if (!supabase) return;
-      if (isLoginMode) {
+
+      if (resetMode) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/?recovery=true`,
+        });
+        if (error) throw error;
+        setMessage("Lien de récupération envoyé par e-mail.");
+      } else if (isLoginMode) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        onAuthSuccess();
       } else {
         const { error, data } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         if (data?.user) await supabase.from('profiles').insert([{ id: data.user.id, is_premium: false }]);
+        onAuthSuccess();
       }
-      onAuthSuccess();
     } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
 
@@ -135,13 +145,71 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
     <div className="flex items-center justify-center min-h-[70dvh] px-4">
       <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-100 relative">
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400"><X size={20}/></button>
-        <h2 className="text-2xl font-bold text-center mb-2 font-serif text-indigo-900">{isLoginMode ? 'Connexion' : 'Inscription'}</h2>
+        <h2 className="text-2xl font-bold text-center mb-2 font-serif text-indigo-900">
+          {resetMode ? 'Récupération' : (isLoginMode ? 'Connexion' : 'Inscription')}
+        </h2>
+        
         <div className="space-y-4 mt-6">
+          {error && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs">{error}</div>}
+          {message && <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl text-xs">{message}</div>}
+          
           <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500 text-[16px]"/>
-          <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500 text-[16px]"/>
-          <Button onClick={handleAuth} disabled={loading} className="w-full">{loading ? <Loader2 className="animate-spin"/> : "Continuer"}</Button>
+          
+          {!resetMode && (
+            <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500 text-[16px]"/>
+          )}
+
+          <Button onClick={handleAuth} disabled={loading} className="w-full">
+            {loading ? <Loader2 className="animate-spin"/> : (resetMode ? "Envoyer le lien" : "Continuer")}
+          </Button>
         </div>
-        <button onClick={onSwitchToLogin} className="w-full mt-6 text-sm text-indigo-600 underline">{isLoginMode ? "Créer un compte" : 'Déjà inscrit ? Connexion'}</button>
+
+        <div className="mt-6 space-y-2 text-center">
+          {!resetMode && isLoginMode && (
+            <button onClick={() => setResetMode(true)} className="block w-full text-xs text-slate-400 hover:text-indigo-600 transition-colors">
+              Mot de passe oublié ?
+            </button>
+          )}
+          {resetMode && (
+            <button onClick={() => setResetMode(false)} className="block w-full text-xs text-indigo-600 font-medium">
+              Retour à la connexion
+            </button>
+          )}
+          <button onClick={onSwitchToLogin} className="block w-full text-sm text-indigo-600 underline">
+            {isLoginMode ? "Créer un compte" : 'Déjà inscrit ? Connexion'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- VUE NOUVEAU MOT DE PASSE ---
+const UpdatePasswordView = ({ onSuccess }) => {
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleUpdate = async () => {
+    setLoading(true); setError(null);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      onSuccess();
+    } catch (err) { setError(err.message); } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-[70dvh] px-4">
+      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-100">
+        <h2 className="text-2xl font-bold text-center mb-6 font-serif text-indigo-900">Nouveau mot de passe</h2>
+        <div className="space-y-4">
+          {error && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs">{error}</div>}
+          <input type="password" placeholder="Nouveau mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500 text-[16px]"/>
+          <Button onClick={handleUpdate} disabled={loading} className="w-full">
+            {loading ? <Loader2 className="animate-spin"/> : "Enregistrer"}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -261,9 +329,13 @@ export default function App() {
   useEffect(() => {
     const randomId = VOYANTES[Math.floor(Math.random() * VOYANTES.length)].id;
     setBusyPsychicId(randomId);
-    
-    // Timer pour la bulle de chat
     const timer = setTimeout(() => setShowChatNotif(true), 5000);
+
+    // GESTION DU RETOUR DE RÉCUPÉRATION DE MOT DE PASSE
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('recovery') === 'true') {
+      setViewState('recovery');
+    }
 
     if (!supabase) return;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
@@ -272,12 +344,9 @@ export default function App() {
         supabase.from('profiles').select('is_premium').eq('id', sess.user.id).single().then(({data}) => {
           if (data?.is_premium) setIsPremium(true);
         });
-      }
+      } else { setIsPremium(false); }
     });
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timer);
-    };
+    return () => { subscription.unsubscribe(); clearTimeout(timer); };
   }, []);
 
   useEffect(() => {
@@ -304,7 +373,9 @@ export default function App() {
       </nav>
       
       <main className="flex-1 overflow-y-auto">
-        {viewState === 'auth' ? <AuthView isLoginMode={isLoginMode} onAuthSuccess={() => setViewState('list')} onSwitchToLogin={() => setIsLoginMode(!isLoginMode)} onCancel={() => setViewState('list')} /> : (
+        {viewState === 'recovery' && <UpdatePasswordView onSuccess={() => setViewState('list')} />}
+        {viewState === 'auth' && <AuthView isLoginMode={isLoginMode} onAuthSuccess={() => setViewState('list')} onSwitchToLogin={() => setIsLoginMode(!isLoginMode)} onCancel={() => setViewState('list')} />}
+        {viewState === 'list' && (
           activeTab === 'horoscope' ? (
             selectedSign ? (
               <div className="max-w-2xl mx-auto p-4">
@@ -316,7 +387,7 @@ export default function App() {
                   <div><h3 className="font-bold text-rose-600 border-b text-[10px] uppercase">Vie Sentimentale</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.love || "Analyse en cours..."}</p></div>
                   <div><h3 className="font-bold text-emerald-700 border-b text-[10px] uppercase">Vie Professionnelle</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.work || "Analyse en cours..."}</p></div>
                   
-                  {!isPremium && <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Débloquez vos sections <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={handleUnlock} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
+                  {!isPremium && <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Débloquez vos sections <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={() => window.location.href = STRIPE_LINK} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
                   {isPremium && (
                     <>
                       <div className="animate-in fade-in duration-700"><h3 className="font-bold text-indigo-600 border-b text-[10px] uppercase">Vie de Famille</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.family || "Chargement..."}</p></div>
@@ -334,7 +405,7 @@ export default function App() {
               </div>
             )
           ) : (
-            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={handleUnlock} session={session} /> : (
+            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={() => window.location.href = STRIPE_LINK} session={session} /> : (
               <div className="max-w-4xl mx-auto px-4 py-8">
                 <div className="text-center mb-10"><h1 className="text-3xl font-serif font-bold">Voyance en Direct</h1></div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-12">
@@ -356,7 +427,7 @@ export default function App() {
         )}
       </main>
 
-      {!selectedPsychic && (
+      {viewState === 'list' && !selectedPsychic && (
         <footer className="bg-white border-t p-8 text-center text-[10px] text-slate-400 pb-32 flex-shrink-0">
           <div className="max-w-4xl mx-auto space-y-4">
             <p className="font-bold uppercase">Altéo Consulting</p>
@@ -369,14 +440,13 @@ export default function App() {
         </footer>
       )}
 
-      {!selectedPsychic && (
+      {viewState === 'list' && !selectedPsychic && (
         <div className="fixed bottom-0 left-0 w-full bg-white border-t h-16 flex items-center justify-around z-50">
           <button onClick={() => { setActiveTab('horoscope'); setViewState('list'); setSelectedSign(null); setHoroscope(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}><Moon size={22}/><span className="text-[9px] font-bold uppercase">Horoscope</span></button>
           <button onClick={() => { setActiveTab('voyance'); setViewState('list'); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}><MessageCircle size={22}/><span className="text-[9px] font-bold uppercase">Voyance</span></button>
         </div>
       )}
 
-      {/* RE-INSERTION DE LA BULLE DE CHAT FLOTTANTE */}
       {showChatNotif && activeTab === 'horoscope' && !selectedSign && viewState === 'list' && (
         <div className="fixed bottom-24 right-4 z-[45] flex items-end gap-2 animate-in slide-in-from-right-5 duration-700">
           <div className="relative bg-white shadow-2xl border border-slate-100 rounded-2xl rounded-br-none p-3 max-w-[190px] mb-8">
