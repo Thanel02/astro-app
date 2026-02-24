@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet';
+import ReactGA from "react-ga4"; // Import Google Analytics
 import { 
   Star, Moon, Sun, Lock, ChevronRight, User, Check, Sparkles, 
   ArrowLeft, Menu, X, LogOut, Loader2, MessageCircle, Send,
-  Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Clock, ShieldCheck, Mail, Key
+  Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Clock, ShieldCheck, Mail, Key, Settings
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-const STRIPE_LINK = "https://buy.stripe.com/test_28EaEW7n8gVEaXTa9o4AU00"; 
+const STRIPE_LINK = "https://buy.stripe.com/6oUdR8gX08J0cbO2q0dAk00"; 
 const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook/chat-voyance";
 const CONTACT_EMAIL = "gestion@alteoconseil.fr";
 const PRICE_TEXT = "2,99€/mois";
 const FREE_CHAT_LIMIT = 3;
+const GA_MEASUREMENT_ID = "GTM-5RQQPZGH"; // <--- METS TON ID GOOGLE ANALYTICS ICI
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -22,6 +24,9 @@ const supabase = (supabaseUrl && supabaseKey)
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
     })
   : null;
+
+// Initialisation de GA (une seule fois au démarrage)
+ReactGA.initialize(GA_MEASUREMENT_ID);
 
 // --- CONSTANTES ---
 const ZODIAC_SIGNS = [
@@ -91,8 +96,9 @@ const LegalModal = ({ isOpen, onClose, type }) => {
       title: "CGU & Confidentialité",
       text: (
         <div className="space-y-4 text-sm text-slate-600 text-left">
-          <p><strong>Confidentialité :</strong> Collecte de l'e-mail pour le compte et historique chat. Paiements via Stripe. Droit de suppression sur {CONTACT_EMAIL}.</p>
-          <p><strong>CGU :</strong> Prix : {PRICE_TEXT}. Divertissement uniquement. Pas de remboursement après déblocage.</p>
+          <p><strong>Confidentialité :</strong> Collecte de l'e-mail pour le compte et historique chat. Utilisation de Google Analytics pour l'amélioration du service. Paiements via Stripe. Droit de suppression sur {CONTACT_EMAIL}.</p>
+          <p><strong>Désabonnement :</strong> Prix : {PRICE_TEXT}. Pour résilier, utilisez le bouton "Gérer mon abonnement" dans votre profil ou contactez {CONTACT_EMAIL}.</p>
+          <p><strong>CGU :</strong> Divertissement uniquement. Pas de remboursement après déblocage.</p>
         </div>
       )
     }
@@ -108,7 +114,7 @@ const LegalModal = ({ isOpen, onClose, type }) => {
   );
 };
 
-// --- AUTH (AVEC MOT DE PASSE OUBLIÉ) ---
+// --- AUTH ---
 const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -121,22 +127,24 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
     setLoading(true); setError(null); setMessage(null);
     try {
       if (!supabase) return;
-
       if (resetMode) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/?recovery=true`,
         });
         if (error) throw error;
         setMessage("Lien de récupération envoyé par e-mail.");
+        ReactGA.event({ category: "User", action: "Password Reset Requested" });
       } else if (isLoginMode) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         onAuthSuccess();
+        ReactGA.event({ category: "User", action: "Login Success" });
       } else {
         const { error, data } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         if (data?.user) await supabase.from('profiles').insert([{ id: data.user.id, is_premium: false }]);
         onAuthSuccess();
+        ReactGA.event({ category: "User", action: "Signup Success" });
       }
     } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
@@ -148,36 +156,19 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
         <h2 className="text-2xl font-bold text-center mb-2 font-serif text-indigo-900">
           {resetMode ? 'Récupération' : (isLoginMode ? 'Connexion' : 'Inscription')}
         </h2>
-        
         <div className="space-y-4 mt-6">
           {error && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs">{error}</div>}
           {message && <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl text-xs">{message}</div>}
-          
           <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500 text-[16px]"/>
-          
           {!resetMode && (
             <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500 text-[16px]"/>
           )}
-
-          <Button onClick={handleAuth} disabled={loading} className="w-full">
-            {loading ? <Loader2 className="animate-spin"/> : (resetMode ? "Envoyer le lien" : "Continuer")}
-          </Button>
+          <Button onClick={handleAuth} disabled={loading} className="w-full">{loading ? <Loader2 className="animate-spin"/> : (resetMode ? "Envoyer le lien" : "Continuer")}</Button>
         </div>
-
         <div className="mt-6 space-y-2 text-center">
-          {!resetMode && isLoginMode && (
-            <button onClick={() => setResetMode(true)} className="block w-full text-xs text-slate-400 hover:text-indigo-600 transition-colors">
-              Mot de passe oublié ?
-            </button>
-          )}
-          {resetMode && (
-            <button onClick={() => setResetMode(false)} className="block w-full text-xs text-indigo-600 font-medium">
-              Retour à la connexion
-            </button>
-          )}
-          <button onClick={onSwitchToLogin} className="block w-full text-sm text-indigo-600 underline">
-            {isLoginMode ? "Créer un compte" : 'Déjà inscrit ? Connexion'}
-          </button>
+          {!resetMode && isLoginMode && <button onClick={() => setResetMode(true)} className="block w-full text-xs text-slate-400 hover:text-indigo-600">Mot de passe oublié ?</button>}
+          {resetMode && <button onClick={() => setResetMode(false)} className="block w-full text-xs text-indigo-600 font-medium">Retour à la connexion</button>}
+          <button onClick={onSwitchToLogin} className="block w-full text-sm text-indigo-600 underline">{isLoginMode ? "Créer un compte" : 'Déjà inscrit ? Connexion'}</button>
         </div>
       </div>
     </div>
@@ -196,6 +187,7 @@ const UpdatePasswordView = ({ onSuccess }) => {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       onSuccess();
+      ReactGA.event({ category: "User", action: "Password Updated" });
     } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
 
@@ -228,9 +220,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
     const updateHeight = () => {
       if (window.visualViewport) {
         setViewportHeight(`${window.visualViewport.height}px`);
-        setTimeout(() => {
-          scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }, 150);
+        setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 150);
       }
     };
     window.visualViewport?.addEventListener('resize', updateHeight);
@@ -242,9 +232,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
     };
   }, []);
 
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages, loading]);
+  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages, loading]);
 
   const handleSend = async () => {
     if (!input.trim() || loading || limitReached) return;
@@ -255,6 +243,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setInput('');
     setLoading(true);
+    ReactGA.event({ category: "Chat", action: "Message Sent", label: psychic.name });
 
     try {
       const response = await fetch(N8N_CHAT_WEBHOOK, {
@@ -296,15 +285,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       </div>
       {!limitReached && (
         <div className="p-3 border-t bg-white flex gap-2 flex-shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <input 
-            value={input} 
-            onChange={e=>setInput(e.target.value)} 
-            onKeyPress={e=>e.key==='Enter' && handleSend()} 
-            onFocus={() => setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 300)} 
-            placeholder="Écrivez..." 
-            className="flex-1 bg-slate-50 rounded-xl px-4 py-3 text-[16px] outline-none" 
-            enterKeyHint="send" 
-          />
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Écrivez..." className="flex-1 bg-slate-50 rounded-xl px-4 py-3 text-[16px] outline-none" enterKeyHint="send" />
           <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-xl"><Send size={20}/></button>
         </div>
       )}
@@ -327,11 +308,13 @@ export default function App() {
   const [showChatNotif, setShowChatNotif] = useState(false);
 
   useEffect(() => {
+    // Analytics: Page View Home
+    ReactGA.send({ hitType: "pageview", page: "/" });
+
     const randomId = VOYANTES[Math.floor(Math.random() * VOYANTES.length)].id;
     setBusyPsychicId(randomId);
     const timer = setTimeout(() => setShowChatNotif(true), 5000);
 
-    // GESTION DU RETOUR DE RÉCUPÉRATION DE MOT DE PASSE
     const query = new URLSearchParams(window.location.search);
     if (query.get('recovery') === 'true') {
       setViewState('recovery');
@@ -353,11 +336,25 @@ export default function App() {
     if (!selectedSign || !supabase) return;
     supabase.from('weekly_horoscopes').select('*').eq('sign_id', selectedSign.name).order('week_start_date', { ascending: false }).limit(1).single()
       .then(({data}) => setHoroscope(data));
+    
+    // Analytics: Horoscope View
+    ReactGA.send({ hitType: "pageview", page: `/horoscope/${selectedSign.id}` });
   }, [selectedSign]);
 
+  useEffect(() => {
+    if (selectedPsychic) {
+      ReactGA.send({ hitType: "pageview", page: `/voyance/${selectedPsychic.id}` });
+    }
+  }, [selectedPsychic]);
+
   const handleUnlock = () => {
+    ReactGA.event({ category: "Conversion", action: "Click Payment Button" });
     if (!session) { setViewState('auth'); setIsLoginMode(false); }
     else { window.location.href = STRIPE_LINK; }
+  };
+
+  const handleManageSubscription = () => {
+    alert(`Pour résilier ou gérer votre abonnement, veuillez envoyer un email à ${CONTACT_EMAIL} avec votre adresse : ${session.user.email}. Traitement sous 24h.`);
   };
 
   return (
@@ -369,7 +366,12 @@ export default function App() {
       
       <nav className="bg-white border-b h-16 flex items-center justify-between px-4 sticky top-0 z-50">
           <div className="font-serif font-bold text-xl text-indigo-900 cursor-pointer" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); setHoroscope(null); }}>AstroPure</div>
-          {!session ? <button onClick={() => { setIsLoginMode(true); setViewState('auth'); }} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full uppercase">Compte</button> : <button onClick={() => supabase.auth.signOut()} className="p-2 text-slate-400"><LogOut size={18}/></button>}
+          {!session ? <button onClick={() => { setIsLoginMode(true); setViewState('auth'); }} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full uppercase">Compte</button> : (
+            <div className="flex items-center gap-2">
+              {isPremium && <button onClick={handleManageSubscription} className="p-2 text-indigo-600 bg-indigo-50 rounded-full"><Settings size={18}/></button>}
+              <button onClick={() => supabase.auth.signOut()} className="p-2 text-slate-400"><LogOut size={18}/></button>
+            </div>
+          )}
       </nav>
       
       <main className="flex-1 overflow-y-auto">
@@ -383,11 +385,9 @@ export default function App() {
                 <div className="bg-white p-6 rounded-3xl border shadow-sm space-y-6">
                   <h2 className="text-2xl font-serif font-bold">{selectedSign.icon} {selectedSign.name}</h2>
                   <p className="text-slate-700 leading-relaxed italic text-lg">"{horoscope?.intro || "Les astres vous préparent un message..."}"</p>
-                  
-                  <div><h3 className="font-bold text-rose-600 border-b text-[10px] uppercase">Vie Sentimentale</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.love || "Analyse en cours..."}</p></div>
-                  <div><h3 className="font-bold text-emerald-700 border-b text-[10px] uppercase">Vie Professionnelle</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.work || "Analyse en cours..."}</p></div>
-                  
-                  {!isPremium && <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Débloquez vos sections <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={() => window.location.href = STRIPE_LINK} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
+                  <div><h3 className="font-bold text-rose-600 border-b text-[10px] uppercase">Vie Sentimentale</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.love || "Lecture des astres..."}</p></div>
+                  <div><h3 className="font-bold text-emerald-700 border-b text-[10px] uppercase">Vie Professionnelle</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.work || "Lecture des astres..."}</p></div>
+                  {!isPremium && <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Débloquez vos sections <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={handleUnlock} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
                   {isPremium && (
                     <>
                       <div className="animate-in fade-in duration-700"><h3 className="font-bold text-indigo-600 border-b text-[10px] uppercase">Vie de Famille</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.family || "Chargement..."}</p></div>
@@ -405,7 +405,7 @@ export default function App() {
               </div>
             )
           ) : (
-            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={() => window.location.href = STRIPE_LINK} session={session} /> : (
+            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={handleUnlock} session={session} /> : (
               <div className="max-w-4xl mx-auto px-4 py-8">
                 <div className="text-center mb-10"><h1 className="text-3xl font-serif font-bold">Voyance en Direct</h1></div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-12">
