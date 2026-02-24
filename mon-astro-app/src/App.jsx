@@ -138,7 +138,7 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
         <h2 className="text-2xl font-bold text-center mb-2 font-serif text-indigo-900">{isLoginMode ? 'Connexion' : 'Inscription'}</h2>
         <div className="space-y-4 mt-6">
           <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500 text-[16px]"/>
-          <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500 text-[16px]"/>
+          <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500 text-[16px]"/>
           <Button onClick={handleAuth} disabled={loading} className="w-full">{loading ? <Loader2 className="animate-spin"/> : "Continuer"}</Button>
         </div>
         <button onClick={onSwitchToLogin} className="w-full mt-6 text-sm text-indigo-600 underline">{isLoginMode ? "Créer un compte" : 'Déjà inscrit ? Connexion'}</button>
@@ -234,7 +234,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
             onKeyPress={e=>e.key==='Enter' && handleSend()} 
             onFocus={() => setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 300)} 
             placeholder="Écrivez..." 
-            className="flex-1 bg-slate-50 rounded-xl px-4 py-3 text-[16px] outline-none" // Taille 16px pour éviter le zoom iOS
+            className="flex-1 bg-slate-50 rounded-xl px-4 py-3 text-[16px] outline-none" 
             enterKeyHint="send" 
           />
           <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-xl"><Send size={20}/></button>
@@ -255,9 +255,9 @@ export default function App() {
   const [isPremium, setIsPremium] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [busyPsychicId, setBusyPsychicId] = useState('');
+  const [horoscope, setHoroscope] = useState(null);
 
   useEffect(() => {
-    // Sélection aléatoire de la voyante occupée
     const randomId = VOYANTES[Math.floor(Math.random() * VOYANTES.length)].id;
     setBusyPsychicId(randomId);
 
@@ -273,16 +273,27 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Récupération de l'horoscope quand un signe est sélectionné
+  useEffect(() => {
+    if (!selectedSign || !supabase) return;
+    supabase.from('weekly_horoscopes').select('*').eq('sign_id', selectedSign.name).order('week_start_date', { ascending: false }).limit(1).single()
+      .then(({data}) => setHoroscope(data));
+  }, [selectedSign]);
+
+  const handleUnlock = () => {
+    if (!session) { setViewState('auth'); setIsLoginMode(false); }
+    else { window.location.href = STRIPE_LINK; }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Helmet>
         <title>AstroPure | Horoscope & Voyance</title>
-        {/* Balise pour empêcher le zoom utilisateur lors du focus input */}
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/> 
       </Helmet>
       
       <nav className="bg-white border-b h-16 flex items-center justify-between px-4 sticky top-0 z-50">
-          <div className="font-serif font-bold text-xl text-indigo-900 cursor-pointer" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); }}>AstroPure</div>
+          <div className="font-serif font-bold text-xl text-indigo-900 cursor-pointer" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); setHoroscope(null); }}>AstroPure</div>
           {!session ? <button onClick={() => { setIsLoginMode(true); setViewState('auth'); }} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full uppercase">Compte</button> : <button onClick={() => supabase.auth.signOut()} className="p-2 text-slate-400"><LogOut size={18}/></button>}
       </nav>
       
@@ -291,12 +302,22 @@ export default function App() {
           activeTab === 'horoscope' ? (
             selectedSign ? (
               <div className="max-w-2xl mx-auto p-4">
-                <button onClick={() => setSelectedSign(null)} className="mb-4 flex items-center text-slate-400"><ArrowLeft size={18} className="mr-2"/>Retour</button>
+                <button onClick={() => { setSelectedSign(null); setHoroscope(null); }} className="mb-4 flex items-center text-slate-400"><ArrowLeft size={18} className="mr-2"/>Retour</button>
                 <div className="bg-white p-6 rounded-3xl border shadow-sm space-y-6">
                   <h2 className="text-2xl font-serif font-bold">{selectedSign.icon} {selectedSign.name}</h2>
-                  <div><h3 className="font-bold text-rose-600 border-b text-[10px] uppercase">Vie Sentimentale</h3><p className="text-sm mt-2 text-slate-600">Lecture des astres en cours...</p></div>
-                  <div><h3 className="font-bold text-emerald-700 border-b text-[10px] uppercase">Vie Professionnelle</h3><p className="text-sm mt-2 text-slate-600">Lecture des astres en cours...</p></div>
-                  {!isPremium && <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Débloquez vos sections <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={() => window.location.href = STRIPE_LINK} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
+                  <p className="text-slate-700 leading-relaxed italic text-lg">"{horoscope?.intro || "Les astres vous préparent un message..."}"</p>
+                  
+                  <div><h3 className="font-bold text-rose-600 border-b text-[10px] uppercase">Vie Sentimentale</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.love || "Analyse en cours..."}</p></div>
+                  <div><h3 className="font-bold text-emerald-700 border-b text-[10px] uppercase">Vie Professionnelle</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.work || "Analyse en cours..."}</p></div>
+                  
+                  {!isPremium ? (
+                    <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Débloquez vos sections <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={handleUnlock} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>
+                  ) : (
+                    <>
+                      <div className="animate-in fade-in duration-700"><h3 className="font-bold text-indigo-600 border-b text-[10px] uppercase">Vie de Famille</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.family || "Chargement..."}</p></div>
+                      <div className="animate-in fade-in duration-1000"><h3 className="font-bold text-amber-600 border-b text-[10px] uppercase">Signaux de Chance</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.luck || "Chargement..."}</p></div>
+                    </>
+                  )}
                 </div>
               </div>
             ) : (
@@ -308,12 +329,12 @@ export default function App() {
               </div>
             )
           ) : (
-            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={() => window.location.href = STRIPE_LINK} session={session} /> : (
+            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={handleUnlock} session={session} /> : (
               <div className="max-w-4xl mx-auto px-4 py-8">
                 <div className="text-center mb-10"><h1 className="text-3xl font-serif font-bold">Voyance en Direct</h1></div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-12">
                   {VOYANTES.map(p => {
-                    const isBusy = p.id === busyPsychicId; // Voyante occupée dynamique
+                    const isBusy = p.id === busyPsychicId;
                     return (
                       <div key={p.id} onClick={() => !isBusy && setSelectedPsychic(p)} className={`bg-white rounded-3xl p-6 text-center border shadow-sm ${isBusy ? 'opacity-80' : 'cursor-pointer hover:border-indigo-300'}`}>
                         <img src={p.image} className={`w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-white ${isBusy ? 'grayscale' : ''}`} />
@@ -345,8 +366,8 @@ export default function App() {
 
       {!selectedPsychic && (
         <div className="fixed bottom-0 left-0 w-full bg-white border-t h-16 flex items-center justify-around z-50">
-          <button onClick={() => { setActiveTab('horoscope'); setViewState('list'); setSelectedSign(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}><Moon size={22}/><span className="text-[9px] font-bold">HOROSCOPE</span></button>
-          <button onClick={() => { setActiveTab('voyance'); setViewState('list'); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}><MessageCircle size={22}/><span className="text-[9px] font-bold">VOYANCE</span></button>
+          <button onClick={() => { setActiveTab('horoscope'); setViewState('list'); setSelectedSign(null); setHoroscope(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}><Moon size={22}/><span className="text-[9px] font-bold uppercase">Horoscope</span></button>
+          <button onClick={() => { setActiveTab('voyance'); setViewState('list'); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}><MessageCircle size={22}/><span className="text-[9px] font-bold uppercase">Voyance</span></button>
         </div>
       )}
 
