@@ -44,9 +44,9 @@ const ZODIAC_SIGNS = [
 ];
 
 const VOYANTES = [
-  { id: 'caroline', name: 'Caroline', desc: 'Médium de naissance.', style: 'Sincère et Directe', image: '/caroline-voyante-astropure.png', hook: "Analyse urgente...", welcome: "Bonjour, je suis Caroline. Je vous écoute." },
-  { id: 'nathalie', name: 'Nathalie', desc: 'Cartomancienne.', style: 'Bienveillante', image: '/nathalie-voyante-astropure.png', hook: "Le tarot parle...", welcome: "Bonjour, je suis Nathalie. Quel domaine vous préoccupe ?" },
-  { id: 'pierre', name: 'Maître Pierre', desc: 'Astrologue expert.', style: 'Analytique', image: '/pierre-voyant-astropure.png', hook: "Configuration clé...", welcome: "Bonjour, ici Pierre. Que puis-je préciser pour vous ?" }
+  { id: 'caroline', name: 'Caroline', desc: 'Médium pur de naissance. Travaille sans support pour une consultation directe.', style: 'Sincère et Directe', image: '/caroline-voyante-astropure.png', hook: "Analyse urgente...", welcome: "Bonjour, je suis Caroline. Je vous écoute." },
+  { id: 'nathalie', name: 'Nathalie', desc: 'Cartomancienne. Spécialiste du Grand Tarot de Marseille.', style: 'Bienveillante et Précise', image: '/nathalie-voyante-astropure.png', hook: "Le tarot parle...", welcome: "Bonjour, je suis Nathalie. Quel domaine vous préoccupe ?" },
+  { id: 'pierre', name: 'Maître Pierre', desc: 'Astrologue et Numérologue certifié. Plus de 30 ans d\'expertise.', style: 'Analytique et Expert', image: '/pierre-voyant-astropure.png', hook: "Configuration clé...", welcome: "Bonjour, ici Pierre. Que puis-je préciser pour vous ?" }
 ];
 
 // --- COMPOSANTS ---
@@ -56,7 +56,7 @@ const Button = ({ children, onClick, variant = 'primary', className = '', disabl
   return <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>{children}</button>;
 };
 
-const LegalModal = ({ isOpen, onClose, type }) => {
+const LegalModal = ({ isOpen, onClose, type, isPremium, onManage }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -71,8 +71,16 @@ const LegalModal = ({ isOpen, onClose, type }) => {
             </>
           ) : (
             <>
-              <p>Prix : {PRICE_TEXT}. Pour résilier votre abonnement, utilisez le lien "Gérer mon abonnement" en bas de page ou contactez-nous à {CONTACT_EMAIL}.</p>
-              <p>Droit de suppression de vos données sur simple demande par email.</p>
+              <p>Prix de l'abonnement : {PRICE_TEXT}.</p>
+              <p>Le service AstroPure est un service de divertissement. Aucun remboursement ne sera effectué après déblocage des contenus.</p>
+              {isPremium && (
+                <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 mt-4">
+                  <p className="font-bold text-indigo-900 mb-2">Gestion de l'abonnement</p>
+                  <p className="text-xs mb-4">Vous pouvez demander la résiliation de votre abonnement à tout moment.</p>
+                  <Button onClick={onManage} className="w-full text-xs py-2">Résilier mon abonnement</Button>
+                </div>
+              )}
+              <p className="pt-4 italic text-[10px]">Droit de suppression de vos données sur simple demande par email à {CONTACT_EMAIL}.</p>
             </>
           )}
         </div>
@@ -109,7 +117,7 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
 
   return (
     <div className="flex items-center justify-center min-h-[70dvh] px-4">
-      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md relative">
+      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md relative border">
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400"><X size={20}/></button>
         <h2 className="text-2xl font-bold text-center font-serif text-indigo-900">{resetMode ? 'Récupération' : (isLoginMode ? 'Connexion' : 'Inscription')}</h2>
         <div className="space-y-4 mt-6">
@@ -166,9 +174,9 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/30">
         {messages.map((m, i) => (<div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] p-3.5 rounded-2xl text-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border text-slate-700 rounded-bl-none'}`}>{m.content}</div></div>))}
-        {loading && <div className="flex justify-start"><Loader2 className="animate-spin text-indigo-400" size={18}/></div>}
+        {loading && <Loader2 className="animate-spin text-indigo-400 mx-auto" size={18}/>}
         <div ref={scrollRef} className="h-2" />
-        {limitReached && <div className="bg-indigo-600 text-white p-6 rounded-2xl text-center space-y-3"><Sparkles className="mx-auto" /><p className="text-[10px] font-bold uppercase">Limite atteinte</p><Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 text-[10px]">Premium ({PRICE_TEXT})</Button></div>}
+        {limitReached && <div className="bg-indigo-600 text-white p-6 rounded-2xl text-center space-y-3"><Sparkles className="mx-auto" /><p className="text-xs font-bold uppercase">Limite de 3 messages atteinte</p><Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 text-[10px]">Premium ({PRICE_TEXT})</Button></div>}
       </div>
       {!limitReached && (
         <div className="p-3 border-t bg-white flex gap-2 flex-shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -214,7 +222,7 @@ export default function App() {
   }, [selectedSign]);
 
   const handleManageSubscription = () => {
-    alert(`Pour résilier ou gérer votre abonnement, veuillez envoyer un email à ${CONTACT_EMAIL} avec votre adresse : ${session.user.email}. Traitement sous 24h.`);
+    alert(`Pour résilier votre abonnement, envoyez un email à ${CONTACT_EMAIL} avec votre adresse : ${session.user.email}. Résiliation traitée sous 24h.`);
   };
 
   return (
@@ -222,7 +230,7 @@ export default function App() {
       <Helmet><title>AstroPure | Horoscope & Voyance</title><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/></Helmet>
       
       <nav className="bg-white border-b h-16 flex items-center justify-between px-4 sticky top-0 z-50">
-        <div className="font-serif font-bold text-xl text-indigo-900 cursor-pointer" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); setHoroscope(null); }}>AstroPure</div>
+        <div className="font-serif font-bold text-xl text-indigo-900 cursor-pointer" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); }}>AstroPure</div>
         {!session ? <button onClick={() => { setIsLoginMode(true); setViewState('auth'); }} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full uppercase">Compte</button> : (
           <button onClick={() => supabase.auth.signOut()} className="p-2 text-slate-400"><LogOut size={18}/></button>
         )}
@@ -230,15 +238,15 @@ export default function App() {
       
       <main className="flex-1 overflow-y-auto">
         {viewState === 'recovery' ? (
-          <div className="max-w-md mx-auto p-8 bg-white mt-10 rounded-3xl shadow-xl">
+          <div className="max-w-md mx-auto p-8 bg-white mt-10 rounded-3xl shadow-xl border">
             <h2 className="text-xl font-bold mb-4">Nouveau mot de passe</h2>
-            <input type="password" id="new-pw" className="w-full p-3 border rounded-xl mb-4" placeholder="Mot de passe"/>
+            <input type="password" id="new-pw" className="w-full p-3 border rounded-xl mb-4" placeholder="Votre mot de passe"/>
             <Button className="w-full" onClick={async () => { const p = document.getElementById('new-pw').value; await supabase.auth.updateUser({ password: p }); setViewState('list'); }}>Enregistrer</Button>
           </div>
         ) : viewState === 'auth' ? <AuthView isLoginMode={isLoginMode} onAuthSuccess={() => setViewState('list')} onSwitchToLogin={() => setIsLoginMode(!isLoginMode)} onCancel={() => setViewState('list')} /> : (
           activeTab === 'horoscope' ? (
             selectedSign ? (
-              <div className="max-w-2xl mx-auto p-4">
+              <div className="max-w-2xl mx-auto p-4 animate-in fade-in">
                 <button onClick={() => { setSelectedSign(null); setHoroscope(null); }} className="mb-4 flex items-center text-slate-400"><ArrowLeft size={18} className="mr-2"/>Retour</button>
                 <div className="bg-white p-6 rounded-3xl border shadow-sm space-y-6">
                   <h2 className="text-2xl font-serif font-bold">{selectedSign.icon} {selectedSign.name}</h2>
@@ -255,20 +263,21 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              <div className="max-w-5xl mx-auto px-4 py-8 text-center grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="max-w-5xl mx-auto px-4 py-8 text-center grid grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in">
                 {ZODIAC_SIGNS.map(s => <div key={s.id} onClick={() => setSelectedSign(s)} className="bg-white p-6 rounded-2xl shadow-sm border cursor-pointer hover:border-indigo-300 transition-all"><div className="text-4xl mb-2">{s.icon}</div><div className="font-bold">{s.name}</div></div>)}
               </div>
             )
           ) : (
             selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={() => window.location.href = STRIPE_LINK} session={session} /> : (
-              <div className="max-w-4xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="max-w-4xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in">
                 {VOYANTES.map(p => {
                   const isBusy = p.id === busyPsychicId;
                   return (
-                    <div key={p.id} onClick={() => !isBusy && setSelectedPsychic(p)} className={`bg-white rounded-3xl p-6 text-center border shadow-sm ${isBusy ? 'opacity-80' : 'cursor-pointer'}`}>
-                      <img src={p.image} className={`w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-white ${isBusy ? 'grayscale' : ''}`} />
+                    <div key={p.id} onClick={() => !isBusy && setSelectedPsychic(p)} className={`bg-white rounded-3xl p-6 text-center border shadow-sm ${isBusy ? 'opacity-80' : 'cursor-pointer hover:border-indigo-300'}`}>
+                      <img src={p.image} className={`w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md ${isBusy ? 'grayscale' : ''}`} />
                       <h3 className="font-bold text-lg">{p.name}</h3>
-                      <button className={`w-full mt-4 py-2.5 rounded-full text-[10px] font-bold uppercase ${isBusy ? 'bg-slate-50 text-slate-300' : 'bg-indigo-600 text-white'}`}>{isBusy ? 'Occupée' : 'Consulter'}</button>
+                      <p className="text-[11px] text-slate-500 leading-relaxed mb-4">{p.desc}</p>
+                      <button className={`w-full mt-auto py-2.5 rounded-full text-[10px] font-bold uppercase ${isBusy ? 'bg-slate-50 text-slate-300' : 'bg-indigo-600 text-white'}`}>{isBusy ? 'Occupée' : 'Consulter'}</button>
                     </div>
                   );
                 })}
@@ -285,9 +294,6 @@ export default function App() {
             <div className="flex justify-center flex-wrap gap-4 underline">
               <button onClick={() => setModalType('mentions')}>Mentions Légales</button>
               <button onClick={() => setModalType('cgu')}>CGU & Confidentialité</button>
-              {isPremium && (
-                <button onClick={handleManageSubscription} className="text-indigo-600 font-bold">Gérer mon abonnement</button>
-              )}
             </div>
             <p className="flex justify-center items-center gap-1 font-bold text-indigo-500 uppercase"><ShieldCheck size={14}/> Sécurisé par Stripe</p>
           </div>
@@ -295,7 +301,7 @@ export default function App() {
       )}
 
       {viewState === 'list' && !selectedPsychic && (
-        <div className="fixed bottom-0 left-0 w-full bg-white border-t h-16 flex items-center justify-around z-50">
+        <div className="fixed bottom-0 left-0 w-full bg-white border-t h-16 flex items-center justify-around z-50 shadow-lg">
           <button onClick={() => { setActiveTab('horoscope'); setSelectedSign(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}><Moon size={22}/><span className="text-[9px] font-bold uppercase">Horoscope</span></button>
           <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}><MessageCircle size={22}/><span className="text-[9px] font-bold uppercase">Voyance</span></button>
         </div>
@@ -307,14 +313,14 @@ export default function App() {
             <p className="text-[10px] font-bold text-indigo-600 uppercase">{VOYANTES[0].name}</p>
             <p className="text-[11px] text-slate-700 italic">"{VOYANTES[0].hook}"</p>
           </div>
-          <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(VOYANTES[0]); setShowChatNotif(false); }} className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-600 overflow-hidden">
+          <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(VOYANTES[0]); setShowChatNotif(false); }} className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-600 overflow-hidden active:scale-95 transition-all">
             <img src={VOYANTES[0].image} className="w-full h-full object-cover" />
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center text-[10px] text-white font-bold">1</div>
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center text-[10px] text-white font-bold animate-pulse">1</div>
           </button>
         </div>
       )}
 
-      <LegalModal isOpen={!!modalType} onClose={() => setModalType(null)} type={modalType} />
+      <LegalModal isOpen={!!modalType} onClose={() => setModalType(null)} type={modalType} isPremium={isPremium} onManage={handleManageSubscription} />
     </div>
   );
 }
