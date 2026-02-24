@@ -45,21 +45,21 @@ const VOYANTES = [
     desc: 'Médium de naissance. Travaille sans support pour une consultation directe.', 
     style: 'Sincère et Directe', image: '/caroline-voyante-astropure.png', 
     hook: "Bonjour, j'ai une analyse importante pour vous...", 
-    welcome: "Bonjour, je suis Caroline. Je suis à votre écoute pour répondre à vos questions. Par quoi souhaitez-vous commencer ?" 
+    welcome: "Bonjour, je suis Caroline. Je suis à votre écoute pour répondre à vos questions. Par quoi souhaitez-vous commencer ?"
   },
   { 
     id: 'nathalie', name: 'Nathalie', 
     desc: 'Cartomancienne. Spécialiste du Grand Tarot de Marseille.', 
     style: 'Bienveillante et Précise', image: '/nathalie-voyante-astropure.png', 
     hook: "Votre tirage actuel indique un changement...", 
-    welcome: "Bonjour, je suis Nathalie. Mes cartes sont prêtes pour votre tirage. Quel domaine vous préoccupe aujourd'hui ?" 
+    welcome: "Bonjour, je suis Nathalie. Mes cartes sont prêtes pour votre tirage. Quel domaine vous préoccupe aujourd'hui ?"
   },
   { 
     id: 'pierre', name: 'Maître Pierre', 
     desc: 'Astrologue et Numérologue certifié. Plus de 30 ans d\'expertise.', 
     style: 'Analytique et Expert', image: '/pierre-voyant-astropure.png', 
     hook: "Votre ciel astral présente une configuration clé...", 
-    welcome: "Bonjour, ici Pierre. Je viens de consulter vos transits actuels. Que puis-je préciser pour vous ?" 
+    welcome: "Bonjour, ici Pierre. Je viens de consulter vos transits actuels. Que puis-je préciser pour vous ?"
   }
 ];
 
@@ -73,7 +73,6 @@ const Button = ({ children, onClick, variant = 'primary', className = '', disabl
   return <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>{children}</button>;
 };
 
-// --- MODALE LÉGALE ---
 const LegalModal = ({ isOpen, onClose, type }) => {
   if (!isOpen) return null;
   const content = {
@@ -109,7 +108,7 @@ const LegalModal = ({ isOpen, onClose, type }) => {
   );
 };
 
-// --- AUTHENTIFICATION ---
+// --- AUTH ---
 const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -138,8 +137,8 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400"><X size={20}/></button>
         <h2 className="text-2xl font-bold text-center mb-2 font-serif text-indigo-900">{isLoginMode ? 'Connexion' : 'Inscription'}</h2>
         <div className="space-y-4 mt-6">
-          <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500"/>
-          <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500"/>
+          <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500 text-[16px]"/>
+          <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none focus:border-indigo-500 text-[16px]"/>
           <Button onClick={handleAuth} disabled={loading} className="w-full">{loading ? <Loader2 className="animate-spin"/> : "Continuer"}</Button>
         </div>
         <button onClick={onSwitchToLogin} className="w-full mt-6 text-sm text-indigo-600 underline">{isLoginMode ? "Créer un compte" : 'Déjà inscrit ? Connexion'}</button>
@@ -148,7 +147,7 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
   );
 };
 
-// --- CHAT SYSTEM (STABILISÉ POUR CLAVIER) ---
+// --- CHAT SYSTEM (STABILISÉ ET ANTI-ZOOM) ---
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [messages, setMessages] = useState([{ role: 'assistant', content: psychic.welcome }]);
   const [input, setInput] = useState('');
@@ -163,7 +162,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         setViewportHeight(`${window.visualViewport.height}px`);
         setTimeout(() => {
           scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }, 100);
+        }, 150);
       }
     };
     window.visualViewport?.addEventListener('resize', updateHeight);
@@ -229,7 +228,15 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       </div>
       {!limitReached && (
         <div className="p-3 border-t bg-white flex gap-2 flex-shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} onFocus={() => setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 300)} placeholder="Écrivez..." className="flex-1 bg-slate-50 rounded-xl px-4 py-3 text-sm outline-none" />
+          <input 
+            value={input} 
+            onChange={e=>setInput(e.target.value)} 
+            onKeyPress={e=>e.key==='Enter' && handleSend()} 
+            onFocus={() => setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 300)} 
+            placeholder="Écrivez..." 
+            className="flex-1 bg-slate-50 rounded-xl px-4 py-3 text-[16px] outline-none" // Taille 16px pour éviter le zoom iOS
+            enterKeyHint="send" 
+          />
           <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-xl"><Send size={20}/></button>
         </div>
       )}
@@ -250,6 +257,7 @@ export default function App() {
   const [busyPsychicId, setBusyPsychicId] = useState('');
 
   useEffect(() => {
+    // Sélection aléatoire de la voyante occupée
     const randomId = VOYANTES[Math.floor(Math.random() * VOYANTES.length)].id;
     setBusyPsychicId(randomId);
 
@@ -267,7 +275,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      <Helmet><title>AstroPure | Horoscope & Voyance</title></Helmet>
+      <Helmet>
+        <title>AstroPure | Horoscope & Voyance</title>
+        {/* Balise pour empêcher le zoom utilisateur lors du focus input */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/> 
+      </Helmet>
+      
       <nav className="bg-white border-b h-16 flex items-center justify-between px-4 sticky top-0 z-50">
           <div className="font-serif font-bold text-xl text-indigo-900 cursor-pointer" onClick={() => { setViewState('list'); setSelectedSign(null); setSelectedPsychic(null); }}>AstroPure</div>
           {!session ? <button onClick={() => { setIsLoginMode(true); setViewState('auth'); }} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full uppercase">Compte</button> : <button onClick={() => supabase.auth.signOut()} className="p-2 text-slate-400"><LogOut size={18}/></button>}
@@ -279,15 +292,15 @@ export default function App() {
             selectedSign ? (
               <div className="max-w-2xl mx-auto p-4">
                 <button onClick={() => setSelectedSign(null)} className="mb-4 flex items-center text-slate-400"><ArrowLeft size={18} className="mr-2"/>Retour</button>
-                <div className="bg-white p-6 rounded-3xl border space-y-6">
+                <div className="bg-white p-6 rounded-3xl border shadow-sm space-y-6">
                   <h2 className="text-2xl font-serif font-bold">{selectedSign.icon} {selectedSign.name}</h2>
                   <div><h3 className="font-bold text-rose-600 border-b text-[10px] uppercase">Vie Sentimentale</h3><p className="text-sm mt-2 text-slate-600">Lecture des astres en cours...</p></div>
                   <div><h3 className="font-bold text-emerald-700 border-b text-[10px] uppercase">Vie Professionnelle</h3><p className="text-sm mt-2 text-slate-600">Lecture des astres en cours...</p></div>
-                  {!isPremium && <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Accédez à votre horoscope <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={() => window.location.href = STRIPE_LINK} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
+                  {!isPremium && <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Débloquez vos sections <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={() => window.location.href = STRIPE_LINK} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
                 </div>
               </div>
             ) : (
-              <div className="max-w-5xl mx-auto px-4 py-8 text-center">
+              <div className="max-w-5xl mx-auto px-4 py-8 text-center animate-in fade-in duration-500">
                 <h1 className="text-3xl font-serif text-slate-900 font-bold mb-10">Horoscope Hebdomadaire</h1>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-12">
                   {ZODIAC_SIGNS.map(s => <div key={s.id} onClick={() => setSelectedSign(s)} className="bg-white p-6 rounded-2xl shadow-sm text-center border cursor-pointer hover:border-indigo-300 transition-all"><div className="text-4xl mb-2">{s.icon}</div><div className="font-bold">{s.name}</div></div>)}
@@ -300,7 +313,7 @@ export default function App() {
                 <div className="text-center mb-10"><h1 className="text-3xl font-serif font-bold">Voyance en Direct</h1></div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-12">
                   {VOYANTES.map(p => {
-                    const isBusy = p.id === busyPsychicId;
+                    const isBusy = p.id === busyPsychicId; // Voyante occupée dynamique
                     return (
                       <div key={p.id} onClick={() => !isBusy && setSelectedPsychic(p)} className={`bg-white rounded-3xl p-6 text-center border shadow-sm ${isBusy ? 'opacity-80' : 'cursor-pointer hover:border-indigo-300'}`}>
                         <img src={p.image} className={`w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-white ${isBusy ? 'grayscale' : ''}`} />
@@ -318,13 +331,14 @@ export default function App() {
       </main>
 
       {!selectedPsychic && (
-        <footer className="bg-white border-t p-8 text-center text-[10px] text-slate-400 pb-32">
+        <footer className="bg-white border-t p-8 text-center text-[10px] text-slate-400 pb-32 flex-shrink-0">
           <div className="max-w-4xl mx-auto space-y-4">
             <p className="font-bold uppercase">Altéo Consulting</p>
             <div className="flex justify-center gap-4 underline">
               <button onClick={() => setModalType('mentions')}>Mentions Légales</button>
               <button onClick={() => setModalType('cgu')}>CGU & Confidentialité</button>
             </div>
+            <p className="flex justify-center items-center gap-1 font-bold text-indigo-500 uppercase"><ShieldCheck size={14}/> Sécurisé par Stripe</p>
           </div>
         </footer>
       )}
