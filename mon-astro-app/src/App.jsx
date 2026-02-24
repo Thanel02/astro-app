@@ -147,7 +147,7 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
   );
 };
 
-// --- CHAT SYSTEM (STABILISÉ ET ANTI-ZOOM) ---
+// --- CHAT SYSTEM ---
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [messages, setMessages] = useState([{ role: 'assistant', content: psychic.welcome }]);
   const [input, setInput] = useState('');
@@ -256,10 +256,14 @@ export default function App() {
   const [modalType, setModalType] = useState(null);
   const [busyPsychicId, setBusyPsychicId] = useState('');
   const [horoscope, setHoroscope] = useState(null);
+  const [showChatNotif, setShowChatNotif] = useState(false);
 
   useEffect(() => {
     const randomId = VOYANTES[Math.floor(Math.random() * VOYANTES.length)].id;
     setBusyPsychicId(randomId);
+    
+    // Timer pour la bulle de chat
+    const timer = setTimeout(() => setShowChatNotif(true), 5000);
 
     if (!supabase) return;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
@@ -270,10 +274,12 @@ export default function App() {
         });
       }
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
-  // Récupération de l'horoscope quand un signe est sélectionné
   useEffect(() => {
     if (!selectedSign || !supabase) return;
     supabase.from('weekly_horoscopes').select('*').eq('sign_id', selectedSign.name).order('week_start_date', { ascending: false }).limit(1).single()
@@ -310,9 +316,8 @@ export default function App() {
                   <div><h3 className="font-bold text-rose-600 border-b text-[10px] uppercase">Vie Sentimentale</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.love || "Analyse en cours..."}</p></div>
                   <div><h3 className="font-bold text-emerald-700 border-b text-[10px] uppercase">Vie Professionnelle</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.work || "Analyse en cours..."}</p></div>
                   
-                  {!isPremium ? (
-                    <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Débloquez vos sections <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={handleUnlock} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>
-                  ) : (
+                  {!isPremium && <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Débloquez vos sections <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={handleUnlock} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
+                  {isPremium && (
                     <>
                       <div className="animate-in fade-in duration-700"><h3 className="font-bold text-indigo-600 border-b text-[10px] uppercase">Vie de Famille</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.family || "Chargement..."}</p></div>
                       <div className="animate-in fade-in duration-1000"><h3 className="font-bold text-amber-600 border-b text-[10px] uppercase">Signaux de Chance</h3><p className="text-sm mt-2 text-slate-600">{horoscope?.luck || "Chargement..."}</p></div>
@@ -368,6 +373,21 @@ export default function App() {
         <div className="fixed bottom-0 left-0 w-full bg-white border-t h-16 flex items-center justify-around z-50">
           <button onClick={() => { setActiveTab('horoscope'); setViewState('list'); setSelectedSign(null); setHoroscope(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}><Moon size={22}/><span className="text-[9px] font-bold uppercase">Horoscope</span></button>
           <button onClick={() => { setActiveTab('voyance'); setViewState('list'); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}><MessageCircle size={22}/><span className="text-[9px] font-bold uppercase">Voyance</span></button>
+        </div>
+      )}
+
+      {/* RE-INSERTION DE LA BULLE DE CHAT FLOTTANTE */}
+      {showChatNotif && activeTab === 'horoscope' && !selectedSign && viewState === 'list' && (
+        <div className="fixed bottom-24 right-4 z-[45] flex items-end gap-2 animate-in slide-in-from-right-5 duration-700">
+          <div className="relative bg-white shadow-2xl border border-slate-100 rounded-2xl rounded-br-none p-3 max-w-[190px] mb-8">
+            <p className="text-[10px] font-bold text-indigo-600 mb-0.5 uppercase">{VOYANTES[0].name}</p>
+            <p className="text-[11px] text-slate-700 leading-tight italic">"{VOYANTES[0].hook}"</p>
+            <div className="absolute bottom-[-8px] right-0 w-0 h-0 border-l-[10px] border-l-transparent border-t-[10px] border-t-white"></div>
+          </div>
+          <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(VOYANTES[0]); setShowChatNotif(false); }} className="relative w-14 h-14 bg-white rounded-full shadow-2xl border-2 border-indigo-600 overflow-hidden active:scale-95 transition-all">
+            <img src={VOYANTES[0].image} className="w-full h-full object-cover" />
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center text-[10px] text-white font-bold animate-pulse">1</div>
+          </button>
         </div>
       )}
 
