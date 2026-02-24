@@ -14,7 +14,7 @@ const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook/chat-voya
 const CONTACT_EMAIL = "gestion@alteoconseil.fr";
 const PRICE_TEXT = "2,99€/mois";
 const FREE_CHAT_LIMIT = 3;
-const GA_MEASUREMENT_ID = "GTM-5RQQPZGH"; 
+const GA_MEASUREMENT_ID = "G-V5V2VV84LG"; 
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
