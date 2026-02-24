@@ -73,6 +73,7 @@ const Button = ({ children, onClick, variant = 'primary', className = '', disabl
   return <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>{children}</button>;
 };
 
+// --- MODALE LÉGALE ---
 const LegalModal = ({ isOpen, onClose, type }) => {
   if (!isOpen) return null;
   const content = {
@@ -80,7 +81,7 @@ const LegalModal = ({ isOpen, onClose, type }) => {
       title: "Mentions Légales",
       text: (
         <div className="space-y-4 text-sm text-slate-600 text-left">
-          <p>Le site AstroPure est édité par <strong>Altéo Consulting</strong>, SIRET <strong>993 353 473 00016</strong>.</p>
+          <p>Le site AstroPure est édité par la société <strong>Altéo Consulting</strong>, SIRET <strong>993 353 473 00016</strong>.</p>
           <p>Siège social : 2 RUE NOTRE-DAME DES VICTOIRES, 75002 PARIS.</p>
           <p>Hébergeur : Vercel Inc., 340 S Lemon Ave #1135, Walnut, CA 91789, USA.</p>
           <p className="font-bold text-indigo-600">Contact SAV : {CONTACT_EMAIL}</p>
@@ -108,7 +109,7 @@ const LegalModal = ({ isOpen, onClose, type }) => {
   );
 };
 
-// --- AUTH ---
+// --- AUTHENTIFICATION ---
 const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -147,27 +148,36 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
   );
 };
 
-// --- CHAT SYSTEM (FIXÉ POUR LE CLAVIER) ---
+// --- CHAT SYSTEM (STABILISÉ POUR CLAVIER) ---
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [messages, setMessages] = useState([{ role: 'assistant', content: psychic.welcome }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState('100dvh');
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    const handleVisualViewportResize = () => {
+    const updateHeight = () => {
       if (window.visualViewport) {
-        const offset = window.innerHeight - window.visualViewport.height;
-        document.body.style.paddingBottom = `${offset}px`;
-        window.scrollTo(0, 0);
+        setViewportHeight(`${window.visualViewport.height}px`);
+        setTimeout(() => {
+          scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }, 100);
       }
     };
-    window.visualViewport?.addEventListener('resize', handleVisualViewportResize);
-    return () => window.visualViewport?.removeEventListener('resize', handleVisualViewportResize);
+    window.visualViewport?.addEventListener('resize', updateHeight);
+    window.visualViewport?.addEventListener('scroll', updateHeight);
+    updateHeight();
+    return () => {
+      window.visualViewport?.removeEventListener('resize', updateHeight);
+      window.visualViewport?.removeEventListener('scroll', updateHeight);
+    };
   }, []);
 
-  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages, loading]);
 
   const handleSend = async () => {
     if (!input.trim() || loading || limitReached) return;
@@ -188,12 +198,12 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       const data = await response.json();
       if (data.error === 'LIMIT_REACHED') { setLimitReached(true); }
       else { setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Pouvez-vous préciser ?" }]); }
-    } catch (e) { setMessages(prev => [...prev, { role: 'assistant', content: "Erreur de connexion." }]); }
+    } catch (e) { setMessages(prev => [...prev, { role: 'assistant', content: "Problème de connexion." }]); }
     finally { setLoading(false); }
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto overflow-hidden">
+    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto overflow-hidden" style={{ height: viewportHeight }}>
       <div className="flex items-center gap-4 py-3 px-4 border-b bg-white flex-shrink-0">
         <button onClick={onGoBack} className="p-1.5 bg-slate-50 rounded-full"><ArrowLeft size={20}/></button>
         <img src={psychic.image} className="w-10 h-10 rounded-full object-cover" />
@@ -213,13 +223,13 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
           <div className="bg-indigo-600 text-white p-6 rounded-2xl text-center space-y-3">
             <Sparkles className="mx-auto" />
             <p className="text-xs font-bold uppercase">Limite atteinte</p>
-            <Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 font-bold uppercase text-[10px]">Passer en Premium ({PRICE_TEXT})</Button>
+            <Button onClick={onAction} variant="secondary" className="w-full text-indigo-600 font-bold uppercase text-[10px]">Premium ({PRICE_TEXT})</Button>
           </div>
         )}
       </div>
       {!limitReached && (
-        <div className="p-3 border-t bg-white flex gap-2 flex-shrink-0">
-          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Écrivez..." className="flex-1 bg-slate-50 rounded-xl px-4 py-3 text-sm outline-none" />
+        <div className="p-3 border-t bg-white flex gap-2 flex-shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} onFocus={() => setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 300)} placeholder="Écrivez..." className="flex-1 bg-slate-50 rounded-xl px-4 py-3 text-sm outline-none" />
           <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-xl"><Send size={20}/></button>
         </div>
       )}
@@ -240,7 +250,6 @@ export default function App() {
   const [busyPsychicId, setBusyPsychicId] = useState('');
 
   useEffect(() => {
-    // Aléatoire pour la voyante occupée
     const randomId = VOYANTES[Math.floor(Math.random() * VOYANTES.length)].id;
     setBusyPsychicId(randomId);
 
@@ -256,11 +265,6 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleUnlock = () => {
-    if (!session) { setViewState('auth'); setIsLoginMode(false); }
-    else { window.location.href = STRIPE_LINK; }
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Helmet><title>AstroPure | Horoscope & Voyance</title></Helmet>
@@ -269,7 +273,7 @@ export default function App() {
           {!session ? <button onClick={() => { setIsLoginMode(true); setViewState('auth'); }} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full uppercase">Compte</button> : <button onClick={() => supabase.auth.signOut()} className="p-2 text-slate-400"><LogOut size={18}/></button>}
       </nav>
       
-      <main className="flex-1">
+      <main className="flex-1 overflow-y-auto">
         {viewState === 'auth' ? <AuthView isLoginMode={isLoginMode} onAuthSuccess={() => setViewState('list')} onSwitchToLogin={() => setIsLoginMode(!isLoginMode)} onCancel={() => setViewState('list')} /> : (
           activeTab === 'horoscope' ? (
             selectedSign ? (
@@ -277,21 +281,21 @@ export default function App() {
                 <button onClick={() => setSelectedSign(null)} className="mb-4 flex items-center text-slate-400"><ArrowLeft size={18} className="mr-2"/>Retour</button>
                 <div className="bg-white p-6 rounded-3xl border space-y-6">
                   <h2 className="text-2xl font-serif font-bold">{selectedSign.icon} {selectedSign.name}</h2>
-                  <div><h3 className="font-bold text-rose-600 border-b text-[10px] uppercase">Vie Sentimentale</h3><p className="text-sm mt-2 text-slate-600">Analyse en cours...</p></div>
-                  <div><h3 className="font-bold text-emerald-700 border-b text-[10px] uppercase">Vie Professionnelle</h3><p className="text-sm mt-2 text-slate-600">Analyse en cours...</p></div>
-                  {!isPremium && <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Débloquez vos sections <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={handleUnlock} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
+                  <div><h3 className="font-bold text-rose-600 border-b text-[10px] uppercase">Vie Sentimentale</h3><p className="text-sm mt-2 text-slate-600">Lecture des astres en cours...</p></div>
+                  <div><h3 className="font-bold text-emerald-700 border-b text-[10px] uppercase">Vie Professionnelle</h3><p className="text-sm mt-2 text-slate-600">Lecture des astres en cours...</p></div>
+                  {!isPremium && <div className="p-6 bg-slate-50 rounded-2xl text-center"><Lock className="mx-auto mb-2 text-slate-300"/><p className="text-xs mb-4">Accédez à votre horoscope <strong>Famille</strong> et <strong>Chance</strong></p><Button onClick={() => window.location.href = STRIPE_LINK} className="w-full text-[10px] uppercase font-bold">Débloquer ({PRICE_TEXT})</Button></div>}
                 </div>
               </div>
             ) : (
               <div className="max-w-5xl mx-auto px-4 py-8 text-center">
                 <h1 className="text-3xl font-serif text-slate-900 font-bold mb-10">Horoscope Hebdomadaire</h1>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-12">
-                  {ZODIAC_SIGNS.map(s => <div key={s.id} onClick={() => setSelectedSign(s)} className="bg-white p-6 rounded-2xl shadow-sm text-center border cursor-pointer"><div className="text-4xl mb-2">{s.icon}</div><div className="font-bold">{s.name}</div></div>)}
+                  {ZODIAC_SIGNS.map(s => <div key={s.id} onClick={() => setSelectedSign(s)} className="bg-white p-6 rounded-2xl shadow-sm text-center border cursor-pointer hover:border-indigo-300 transition-all"><div className="text-4xl mb-2">{s.icon}</div><div className="font-bold">{s.name}</div></div>)}
                 </div>
               </div>
             )
           ) : (
-            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={handleUnlock} session={session} /> : (
+            selectedPsychic ? <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={() => window.location.href = STRIPE_LINK} session={session} /> : (
               <div className="max-w-4xl mx-auto px-4 py-8">
                 <div className="text-center mb-10"><h1 className="text-3xl font-serif font-bold">Voyance en Direct</h1></div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-12">
