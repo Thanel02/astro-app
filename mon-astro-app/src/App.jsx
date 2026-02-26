@@ -174,25 +174,40 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
   );
 };
 
-// --- CHAT SYSTEM (STABLE KEYBOARD VERSION) ---
+// --- CHAT SYSTEM (STABLE KEYBOARD + SESSION TRANSFER) ---
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const historyKey = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
   const globalCountKey = `astro_global_count_${session?.user?.id || 'anon'}`;
 
+  // LOGIQUE DE TRANSFERT : Si l'utilisateur vient de se connecter, on récupère l'historique "anon"
   const [messages, setMessages] = useState(() => {
-    const saved = localStorage.getItem(historyKey);
-    return saved ? JSON.parse(saved) : [{ role: 'assistant', content: psychic.welcome }];
+    const savedLocal = localStorage.getItem(historyKey);
+    if (savedLocal) return JSON.parse(savedLocal);
+
+    if (session?.user?.id) {
+      const anonHistKey = `astro_hist_${psychic.id}_anon`;
+      const anonHist = localStorage.getItem(anonHistKey);
+      if (anonHist) return JSON.parse(anonHist);
+    }
+    
+    return [{ role: 'assistant', content: psychic.welcome }];
   });
   
   const [globalUsage, setGlobalUsage] = useState(() => {
-    return parseInt(localStorage.getItem(globalCountKey) || "0");
+    const currentVal = localStorage.getItem(globalCountKey);
+    if (currentVal) return parseInt(currentVal);
+
+    if (session?.user?.id) {
+      const anonCount = localStorage.getItem(`astro_global_count_anon`);
+      if (anonCount) return parseInt(anonCount);
+    }
+    return 0;
   });
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
 
-  // Empêcher le scroll du body sur mobile
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = 'auto'; };
@@ -200,12 +215,14 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
   useEffect(() => {
     localStorage.setItem(historyKey, JSON.stringify(messages));
+    localStorage.setItem(globalCountKey, globalUsage.toString());
+    
     if (!isPremium && globalUsage >= FREE_CHAT_LIMIT) {
       setLimitReached(true);
     } else {
       setLimitReached(false);
     }
-  }, [messages, globalUsage, isPremium, historyKey]);
+  }, [messages, globalUsage, isPremium, historyKey, globalCountKey]);
 
   const handleSend = async () => {
     if (!input.trim() || loading || limitReached) return;
@@ -216,12 +233,10 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
     }
 
     const userMsg = input;
-    // On ajoute le message en haut de la liste pour flex-col-reverse
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     
     const newCount = globalUsage + 1;
     setGlobalUsage(newCount);
-    localStorage.setItem(globalCountKey, newCount.toString());
 
     setInput('');
     setLoading(true);
@@ -239,12 +254,10 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
     finally { setLoading(false); }
   };
 
-  // On inverse l'ordre des messages pour flex-col-reverse
   const reversedMessages = [...messages].reverse();
 
   return (
     <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none">
-      {/* HEADER */}
       <div className="flex items-center gap-4 py-3 px-4 border-b bg-white flex-shrink-0 z-10">
         <button onClick={onGoBack} className="p-1.5 bg-slate-50 rounded-full active:scale-90 transition-transform"><ArrowLeft size={20}/></button>
         <div className="relative">
@@ -263,9 +276,8 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         </div>
       )}
 
-      {/* ZONE DE MESSAGES - Utilise flex-col-reverse pour coller au bas */}
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col-reverse bg-slate-50/30">
-        <div className="h-2 flex-shrink-0" /> {/* Petit padding en bas */}
+        <div className="h-2 flex-shrink-0" />
 
         {limitReached && (
           <div className="bg-white border-2 border-indigo-600 p-6 rounded-3xl text-center space-y-4 shadow-xl my-4">
@@ -290,14 +302,13 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
         {reversedMessages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 animate-in slide-in-from-bottom-2 duration-300`}>
-            <div className={`max-w-[85%] p-3.5 rounded-2xl text-[15px] leading-snug shadow-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'}`}>
+            <div className={`max-w-[85%] p-3.5 rounded-2xl text-[15px] font-medium leading-snug shadow-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'}`}>
               {m.content}
             </div>
           </div>
         ))}
       </div>
       
-      {/* INPUT */}
       {!limitReached && (
         <div className="p-3 border-t bg-white flex gap-2 flex-shrink-0">
           <input 
