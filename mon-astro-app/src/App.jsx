@@ -174,24 +174,35 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
   );
 };
 
-// --- CHAT SYSTEM (WITH STORAGE) ---
+// --- CHAT SYSTEM (GLOBAL LIMIT + SMS STYLE) ---
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
-  // Clé unique de stockage pour ce voyant
-  const storageKey = `astro_history_${psychic.id}_${session?.user?.id || 'anon'}`;
+  const historyKey = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
+  const globalCountKey = `astro_global_count_${session?.user?.id || 'anon'}`;
 
   const [messages, setMessages] = useState(() => {
-    const saved = localStorage.getItem(storageKey);
+    const saved = localStorage.getItem(historyKey);
     return saved ? JSON.parse(saved) : [{ role: 'assistant', content: psychic.welcome }];
   });
   
+  const [globalUsage, setGlobalUsage] = useState(() => {
+    return parseInt(localStorage.getItem(globalCountKey) || "0");
+  });
+
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [viewportHeight, setViewportHeight] = useState('100dvh');
   const scrollRef = useRef(null);
 
+  // Auto-scroll à chaque changement de messages ou statut loading
   useEffect(() => {
-    const up = () => { if (window.visualViewport) { setViewportHeight(`${window.visualViewport.height}px`); setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 150); } };
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, loading]);
+
+  useEffect(() => {
+    const up = () => { if (window.visualViewport) { setViewportHeight(`${window.visualViewport.height}px`); setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 150); } };
     window.visualViewport?.addEventListener('resize', up);
     window.visualViewport?.addEventListener('scroll', up);
     up();
@@ -201,27 +212,30 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
     };
   }, []);
 
-  // Sauvegarde et Vérification de la limite
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(messages));
-    const userCount = messages.filter(m => m.role === 'user').length;
-    if (!isPremium && userCount >= FREE_CHAT_LIMIT) {
+    localStorage.setItem(historyKey, JSON.stringify(messages));
+    if (!isPremium && globalUsage >= FREE_CHAT_LIMIT) {
       setLimitReached(true);
     } else {
       setLimitReached(false);
     }
-  }, [messages, isPremium, storageKey]);
-
-  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages, loading]);
+  }, [messages, globalUsage, isPremium, historyKey]);
 
   const handleSend = async () => {
     if (!input.trim() || loading || limitReached) return;
-    const userMsg = input;
-    const userCount = messages.filter(m => m.role === 'user').length;
     
-    if (!isPremium && userCount >= FREE_CHAT_LIMIT) { setLimitReached(true); return; }
+    if (!isPremium && globalUsage >= FREE_CHAT_LIMIT) { 
+      setLimitReached(true); 
+      return; 
+    }
 
+    const userMsg = input;
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    
+    const newCount = globalUsage + 1;
+    setGlobalUsage(newCount);
+    localStorage.setItem(globalCountKey, newCount.toString());
+
     setInput('');
     setLoading(true);
     ReactGA.event({ category: "Chat", action: "Message Sent", label: psychic.name });
@@ -234,11 +248,9 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       });
       const data = await response.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Je reçois une image floue, pouvez-vous préciser ?" }]);
-    } catch (e) { setMessages(prev => [...prev, { role: 'assistant', content: "Désolé, la connexion spirituelle est instable. Réessayez." }]); }
+    } catch (e) { setMessages(prev => [...prev, { role: 'assistant', content: "Connexion instable. Réessayez." }]); }
     finally { setLoading(false); }
   };
-
-  const currentCount = messages.filter(m => m.role === 'user').length;
 
   return (
     <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto overflow-hidden" style={{ height: viewportHeight }}>
@@ -256,32 +268,44 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       
       {!isPremium && (
         <div className="bg-indigo-50 px-4 py-1.5 text-[10px] text-indigo-700 text-center font-medium border-b border-indigo-100">
-          🎁 {currentCount >= FREE_CHAT_LIMIT ? 'Offre terminée' : `Il vous reste ${FREE_CHAT_LIMIT - currentCount} messages gratuits`}
+          🎁 {globalUsage >= FREE_CHAT_LIMIT ? 'Offre terminée' : `Crédit : ${FREE_CHAT_LIMIT - globalUsage} messages gratuits restants`}
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/30">
+      {/* ZONE DE MESSAGES STYLE SMS */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/30 scroll-smooth">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none shadow-md' : 'bg-white border text-slate-700 rounded-bl-none shadow-sm'}`}>
+            <div className={`max-w-[85%] p-3.5 rounded-2xl text-[15px] leading-snug ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none shadow-sm' : 'bg-white border text-slate-700 rounded-bl-none shadow-sm'}`}>
               {m.content}
             </div>
           </div>
         ))}
-        {loading && <div className="flex justify-start"><div className="bg-white border p-3 rounded-2xl rounded-bl-none shadow-sm"><Loader2 className="animate-spin text-indigo-400" size={18}/></div></div>}
-        <div ref={scrollRef} className="h-2" />
+        
+        {/* SIMULATION ÉCRITURE VOYANTE */}
+        {loading && (
+          <div className="flex justify-start animate-in fade-in duration-300">
+            <div className="bg-white border p-4 rounded-2xl rounded-bl-none shadow-sm flex gap-1">
+              <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+              <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+              <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce"></div>
+            </div>
+          </div>
+        )}
         
         {limitReached && (
           <div className="bg-white border-2 border-indigo-600 p-6 rounded-3xl text-center space-y-4 shadow-xl animate-in zoom-in-95">
             <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto"><Sparkles /></div>
             <div>
-              <p className="text-sm font-bold text-indigo-900">Vos 3 messages gratuits sont terminés</p>
-              <p className="text-[11px] text-slate-500 mt-1">Continuez cette consultation en illimité avec l'offre Premium.</p>
+              <p className="text-sm font-bold text-indigo-900">Limite atteinte</p>
+              <p className="text-[11px] text-slate-500 mt-1">Vous avez utilisé vos {FREE_CHAT_LIMIT} messages offerts. Passez Premium pour continuer.</p>
             </div>
-            <Button onClick={onAction} className="w-full text-xs font-bold uppercase py-4 shadow-lg">Devenir Premium ({PRICE_TEXT})</Button>
-            <p className="text-[9px] text-slate-400 italic">Sans engagement. Résiliable par simple email.</p>
+            <Button onClick={onAction} className="w-full text-xs font-bold uppercase py-4 shadow-lg">Continuer maintenant ({PRICE_TEXT})</Button>
           </div>
         )}
+        
+        {/* ELEMENT POUR LE SCROLL AUTOMATIQUE */}
+        <div ref={scrollRef} className="h-4 w-full" />
       </div>
       
       {!limitReached && (
@@ -290,7 +314,6 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
             value={input} 
             onChange={e=>setInput(e.target.value)} 
             onKeyPress={e=>e.key==='Enter' && handleSend()} 
-            onFocus={() => setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 300)} 
             placeholder="Écrivez votre question ici..." 
             className="flex-1 bg-slate-50 rounded-xl px-4 py-3 text-[16px] outline-none border border-transparent focus:border-indigo-200" 
             enterKeyHint="send" 
@@ -367,7 +390,7 @@ export default function App() {
       {viewState === 'list' && !selectedPsychic && (
         <div className="bg-indigo-600 text-white text-[11px] py-2 text-center font-bold flex items-center justify-center gap-2">
           <Sparkles size={14} className="animate-pulse" />
-          OFFRE LIMITÉE : 3 MESSAGES GRATUITS AVEC NOS MÉDIUMS
+          OFFRE LIMITÉE : 3 MESSAGES GRATUITS AU TOTAL
           <Sparkles size={14} className="animate-pulse" />
         </div>
       )}
