@@ -5,7 +5,8 @@ import ReactGA from "react-ga4";
 import { 
   Star, Moon, Sun, Lock, ChevronRight, User, Check, Sparkles, 
   ArrowLeft, Menu, X, LogOut, Loader2, MessageCircle, Send,
-  Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Clock, ShieldCheck, Mail, Key, Settings
+  Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Clock, ShieldCheck, Mail, Key, Settings,
+  ThumbsUp, Users
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -44,9 +45,42 @@ const ZODIAC_SIGNS = [
 ];
 
 const VOYANTES = [
-  { id: 'caroline', name: 'Caroline', desc: 'Médium pur de naissance. Consultation directe sans support.', style: 'Sincère et Directe', image: '/caroline-voyante-astropure.png', hook: "Analyse urgente...", welcome: "Bonjour, je suis Caroline. Posez-moi votre question, je vous écoute." },
-  { id: 'nathalie', name: 'Nathalie', desc: 'Cartomancienne. Spécialiste du Grand Tarot de Marseille.', style: 'Bienveillante et Précise', image: '/nathalie-voyante-astropure.png', hook: "Le tarot parle...", welcome: "Bonjour, je suis Nathalie. Quel domaine vous préoccupe aujourd'hui ?" },
-  { id: 'pierre', name: 'Maître Pierre', desc: 'Astrologue et Numérologue certifié. 30 ans d\'expertise.', style: 'Analytique et Expert', image: '/pierre-voyant-astropure.png', hook: "Configuration clé...", welcome: "Bonjour, ici Pierre. Donnez-moi votre prénom pour commencer." }
+  { 
+    id: 'caroline', 
+    name: 'Caroline', 
+    desc: 'Médium pur de naissance. Consultation directe sans support.', 
+    style: 'Sincère et Directe', 
+    image: '/caroline-voyante-astropure.png', 
+    hook: "Analyse urgente...", 
+    welcome: "Bonjour, je suis Caroline. Posez-moi votre question, je vous écoute.",
+    rating: 4.9,
+    reviews: 1248,
+    isTop: true
+  },
+  { 
+    id: 'nathalie', 
+    name: 'Nathalie', 
+    desc: 'Cartomancienne. Spécialiste du Grand Tarot de Marseille.', 
+    style: 'Bienveillante et Précise', 
+    image: '/nathalie-voyante-astropure.png', 
+    hook: "Le tarot parle...", 
+    welcome: "Bonjour, je suis Nathalie. Quel domaine vous préoccupe aujourd'hui ?",
+    rating: 4.8,
+    reviews: 892,
+    isTop: false
+  },
+  { 
+    id: 'pierre', 
+    name: 'Maître Pierre', 
+    desc: 'Astrologue et Numérologue certifié. 30 ans d\'expertise.', 
+    style: 'Analytique et Expert', 
+    image: '/pierre-voyant-astropure.png', 
+    hook: "Configuration clé...", 
+    welcome: "Bonjour, ici Pierre. Donnez-moi votre prénom pour commencer.",
+    rating: 4.9,
+    reviews: 2105,
+    isTop: false
+  }
 ];
 
 // --- COMPOSANTS ---
@@ -167,7 +201,6 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
     const userMsg = input;
     const userCount = messages.filter(m => m.role === 'user').length;
     
-    // Si limite atteinte
     if (!isPremium && userCount >= FREE_CHAT_LIMIT) { setLimitReached(true); return; }
 
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
@@ -252,7 +285,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
 // --- APP ---
 export default function App() {
-  const [activeTab, setActiveTab] = useState('voyance'); // CHANGÉ : Voyance par défaut pour Google Ads
+  const [activeTab, setActiveTab] = useState('voyance'); 
   const [viewState, setViewState] = useState('list'); 
   const [isLoginMode, setIsLoginMode] = useState(false);
   const [selectedSign, setSelectedSign] = useState(null);
@@ -312,7 +345,6 @@ export default function App() {
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/> 
       </Helmet>
 
-      {/* BANDEAU INFO CONVERSION */}
       {viewState === 'list' && !selectedPsychic && (
         <div className="bg-indigo-600 text-white text-[11px] py-2 text-center font-bold flex items-center justify-center gap-2">
           <Sparkles size={14} className="animate-pulse" />
@@ -338,7 +370,6 @@ export default function App() {
         {viewState === 'recovery' ? (
           <div className="max-w-md mx-auto p-8 bg-white mt-10 rounded-3xl shadow-xl border text-center">
             <h2 className="text-xl font-bold mb-4">Récupération de compte</h2>
-            <p className="text-sm text-slate-500 mb-6">Saisissez votre nouveau mot de passe ci-dessous.</p>
             <input type="password" id="new-pw" className="w-full p-3 border rounded-xl mb-4" placeholder="Nouveau mot de passe"/>
             <Button className="w-full" onClick={async () => { const p = document.getElementById('new-pw').value; await supabase.auth.updateUser({ password: p }); setViewState('list'); }}>Mettre à jour</Button>
           </div>
@@ -349,16 +380,16 @@ export default function App() {
                 <button onClick={() => { setSelectedSign(null); setHoroscope(null); }} className="mb-4 flex items-center text-slate-400 text-sm"><ArrowLeft size={18} className="mr-2"/>Retour aux signes</button>
                 <div className="bg-white p-6 rounded-3xl border shadow-sm space-y-6">
                   <h2 className="text-2xl font-serif font-bold text-indigo-900">{selectedSign.icon} Horoscope {selectedSign.name}</h2>
-                  <p className="text-slate-700 leading-relaxed italic text-lg border-l-4 border-indigo-100 pl-4">"{horoscope?.intro || "Les alignements planétaires révèlent une configuration rare pour vous cette semaine..."}"</p>
+                  <p className="text-slate-700 leading-relaxed italic text-lg border-l-4 border-indigo-100 pl-4">"{horoscope?.intro || "Les alignements planétaires révèlent une configuration rare..."}"</p>
                   <div className="grid gap-6">
-                    <div className="bg-rose-50/50 p-4 rounded-2xl"><h3 className="font-bold text-rose-600 border-b border-rose-100 text-[10px] uppercase mb-2">Cœur & Sentiments</h3><p className="text-sm text-slate-600">{horoscope?.love || "Le climat astral est en train de se stabiliser pour votre signe..."}</p></div>
-                    <div className="bg-emerald-50/50 p-4 rounded-2xl"><h3 className="font-bold text-emerald-700 border-b border-emerald-100 text-[10px] uppercase mb-2">Carrière & Projets</h3><p className="text-sm text-slate-600">{horoscope?.work || "Une opportunité se dessine à l'horizon, restez attentif aux signes..."}</p></div>
+                    <div className="bg-rose-50/50 p-4 rounded-2xl"><h3 className="font-bold text-rose-600 border-b border-rose-100 text-[10px] uppercase mb-2">Cœur & Sentiments</h3><p className="text-sm text-slate-600">{horoscope?.love || "Le climat astral est en train de se stabiliser..."}</p></div>
+                    <div className="bg-emerald-50/50 p-4 rounded-2xl"><h3 className="font-bold text-emerald-700 border-b border-emerald-100 text-[10px] uppercase mb-2">Carrière & Projets</h3><p className="text-sm text-slate-600">{horoscope?.work || "Une opportunité se dessine à l'horizon..."}</p></div>
                   </div>
                   {!isPremium && <div className="p-6 bg-indigo-900 text-white rounded-3xl text-center shadow-xl"><Lock size={32} className="mx-auto mb-3 text-indigo-300"/><h4 className="font-bold mb-1">Rapport Complet Verrouillé</h4><p className="text-xs mb-4 text-indigo-200">Accédez à vos prévisions <strong>Famille</strong> et <strong>Chance</strong>.</p><Button onClick={handleUnlock} variant="secondary" className="w-full text-indigo-900 font-bold">DÉBLOQUER POUR {PRICE_TEXT}</Button></div>}
                   {isPremium && (
                     <div className="space-y-6">
-                      <div className="animate-in fade-in duration-700 bg-amber-50/50 p-4 rounded-2xl"><h3 className="font-bold text-amber-700 border-b border-amber-100 text-[10px] uppercase mb-2">Famille & Entourage</h3><p className="text-sm text-slate-600">{horoscope?.family || "Chargement de vos prévisions..."}</p></div>
-                      <div className="animate-in fade-in duration-1000 bg-indigo-50/50 p-4 rounded-2xl"><h3 className="font-bold text-indigo-700 border-b border-indigo-100 text-[10px] uppercase mb-2">Chance & Opportunités</h3><p className="text-sm text-slate-600">{horoscope?.luck || "Chargement de vos prévisions..."}</p></div>
+                      <div className="animate-in fade-in duration-700 bg-amber-50/50 p-4 rounded-2xl"><h3 className="font-bold text-amber-700 border-b border-amber-100 text-[10px] uppercase mb-2">Famille & Entourage</h3><p className="text-sm text-slate-600">{horoscope?.family || "Chargement..."}</p></div>
+                      <div className="animate-in fade-in duration-1000 bg-indigo-50/50 p-4 rounded-2xl"><h3 className="font-bold text-indigo-700 border-b border-indigo-100 text-[10px] uppercase mb-2">Chance & Opportunités</h3><p className="text-sm text-slate-600">{horoscope?.luck || "Chargement..."}</p></div>
                     </div>
                   )}
                 </div>
@@ -386,11 +417,32 @@ export default function App() {
                     const isBusy = p.id === busyPsychicId;
                     return (
                       <div key={p.id} onClick={() => !isBusy && setSelectedPsychic(p)} className={`bg-white rounded-[2rem] p-6 text-center border shadow-sm relative transition-all ${isBusy ? 'opacity-80' : 'cursor-pointer hover:border-indigo-300 hover:shadow-lg'}`}>
+                        {p.isTop && (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[9px] font-black px-4 py-1.5 rounded-full uppercase shadow-sm flex items-center gap-1 z-10 whitespace-nowrap">
+                            <Star size={10} fill="currentColor"/> Expert Coup de Cœur
+                          </div>
+                        )}
+                        
                         {isBusy && <div className="absolute top-4 right-4 bg-slate-100 text-slate-400 text-[8px] font-bold px-2 py-1 rounded-full uppercase">Indisponible</div>}
                         {!isBusy && <div className="absolute top-4 right-4 bg-emerald-100 text-emerald-600 text-[8px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1"><div className="w-1 h-1 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>}
                         
-                        <img src={p.image} className={`w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md ${isBusy ? 'grayscale' : ''}`} />
-                        <h3 className="font-bold text-xl text-indigo-900">{p.name}</h3>
+                        <img src={p.image} className={`w-28 h-28 rounded-full object-cover mx-auto mb-3 border-4 border-white shadow-md ${isBusy ? 'grayscale' : ''}`} />
+                        
+                        {/* NOTATION ET CONSULTATIONS */}
+                        <div className="flex flex-col items-center gap-1 mb-4">
+                          <div className="flex items-center gap-1 text-amber-500">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} size={12} fill={i < Math.floor(p.rating) ? "currentColor" : "none"} />
+                            ))}
+                            <span className="text-xs font-bold ml-1 text-slate-700">{p.rating}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-slate-400 text-[10px]">
+                            <Users size={12}/>
+                            <span>{p.reviews.toLocaleString()} consultations</span>
+                          </div>
+                        </div>
+
+                        <h3 className="font-bold text-xl text-indigo-900 leading-tight">{p.name}</h3>
                         <p className="text-indigo-600 text-[10px] font-bold uppercase mb-3 tracking-wider">{p.style}</p>
                         <p className="text-xs text-slate-500 leading-relaxed mb-6 h-12 overflow-hidden italic">"{p.desc}"</p>
                         
@@ -413,7 +465,7 @@ export default function App() {
             <div className="flex justify-center items-center gap-2 text-indigo-900 font-serif font-bold text-lg opacity-50">
               <Moon size={20}/> AstroPure
             </div>
-            <p className="max-w-xs mx-auto leading-relaxed">Le service AstroPure est édité par Altéo Consulting. SIRET 993 353 473 00016. Toutes les données sont cryptées et sécurisées.</p>
+            <p className="max-w-xs mx-auto leading-relaxed">Le service AstroPure est édité par Altéo Consulting. Toutes les données sont cryptées et sécurisées.</p>
             <div className="flex justify-center flex-wrap gap-6 font-medium text-slate-500">
               <button onClick={() => setModalType('mentions')} className="hover:text-indigo-600 transition-colors">Mentions Légales</button>
               <button onClick={() => setModalType('cgu')} className="hover:text-indigo-600 transition-colors">CGU & Confidentialité</button>
@@ -427,7 +479,6 @@ export default function App() {
         </footer>
       )}
 
-      {/* NAVIGATION BASSE */}
       {viewState === 'list' && !selectedPsychic && (
         <div className="fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-md border-t h-20 flex items-center justify-around z-50 px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
           <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === 'voyance' ? 'text-indigo-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
@@ -441,7 +492,6 @@ export default function App() {
         </div>
       )}
 
-      {/* NOTIFICATION FLOTTANTE */}
       {showChatNotif && activeTab === 'horoscope' && !selectedSign && viewState === 'list' && (
         <div className="fixed bottom-24 right-4 z-[45] flex items-end gap-3 animate-in slide-in-from-right-10 duration-700">
           <div className="relative bg-white shadow-2xl border border-indigo-50 rounded-2xl p-4 max-w-[200px] mb-8 transform -rotate-2">
