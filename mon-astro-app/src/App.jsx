@@ -174,9 +174,16 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
   );
 };
 
-// --- CHAT SYSTEM ---
+// --- CHAT SYSTEM (WITH STORAGE) ---
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
-  const [messages, setMessages] = useState([{ role: 'assistant', content: psychic.welcome }]);
+  // Clé unique de stockage pour ce voyant
+  const storageKey = `astro_history_${psychic.id}_${session?.user?.id || 'anon'}`;
+
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem(storageKey);
+    return saved ? JSON.parse(saved) : [{ role: 'assistant', content: psychic.welcome }];
+  });
+  
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
@@ -193,6 +200,17 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       window.visualViewport?.removeEventListener('scroll', up);
     };
   }, []);
+
+  // Sauvegarde et Vérification de la limite
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(messages));
+    const userCount = messages.filter(m => m.role === 'user').length;
+    if (!isPremium && userCount >= FREE_CHAT_LIMIT) {
+      setLimitReached(true);
+    } else {
+      setLimitReached(false);
+    }
+  }, [messages, isPremium, storageKey]);
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages, loading]);
 
@@ -215,11 +233,12 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         body: JSON.stringify({ message: userMsg, voyanteId: psychic.id, userId: session?.user?.id || 'anonymous', isPremium })
       });
       const data = await response.json();
-      if (data.error === 'LIMIT_REACHED') { setLimitReached(true); }
-      else { setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Je reçois une image floue, pouvez-vous préciser ?" }]); }
+      setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Je reçois une image floue, pouvez-vous préciser ?" }]);
     } catch (e) { setMessages(prev => [...prev, { role: 'assistant', content: "Désolé, la connexion spirituelle est instable. Réessayez." }]); }
     finally { setLoading(false); }
   };
+
+  const currentCount = messages.filter(m => m.role === 'user').length;
 
   return (
     <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto overflow-hidden" style={{ height: viewportHeight }}>
@@ -237,7 +256,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       
       {!isPremium && (
         <div className="bg-indigo-50 px-4 py-1.5 text-[10px] text-indigo-700 text-center font-medium border-b border-indigo-100">
-          🎁 Il vous reste {FREE_CHAT_LIMIT - messages.filter(m => m.role === 'user').length} messages gratuits
+          🎁 {currentCount >= FREE_CHAT_LIMIT ? 'Offre terminée' : `Il vous reste ${FREE_CHAT_LIMIT - currentCount} messages gratuits`}
         </div>
       )}
 
@@ -428,7 +447,6 @@ export default function App() {
                         
                         <img src={p.image} className={`w-28 h-28 rounded-full object-cover mx-auto mb-3 border-4 border-white shadow-md ${isBusy ? 'grayscale' : ''}`} />
                         
-                        {/* NOTATION ET CONSULTATIONS */}
                         <div className="flex flex-col items-center gap-1 mb-4">
                           <div className="flex items-center gap-1 text-amber-500">
                             {[...Array(5)].map((_, i) => (
