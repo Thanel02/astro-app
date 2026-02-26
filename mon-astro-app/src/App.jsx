@@ -174,7 +174,7 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
   );
 };
 
-// --- CHAT SYSTEM (SMS STYLE + KEYBOARD FIX) ---
+// --- CHAT SYSTEM (STABLE KEYBOARD VERSION) ---
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const historyKey = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
   const globalCountKey = `astro_global_count_${session?.user?.id || 'anon'}`;
@@ -191,38 +191,12 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
-  const [viewportHeight, setViewportHeight] = useState('100dvh');
-  const scrollRef = useRef(null);
 
-  // GESTION DU CLAVIER MOBILE
+  // Empêcher le scroll du body sur mobile
   useEffect(() => {
-    const handleVisualViewport = () => {
-      if (window.visualViewport) {
-        setViewportHeight(`${window.visualViewport.height}px`);
-        // On scroll vers le bas dès que la taille change (clavier)
-        setTimeout(() => {
-          scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }, 100);
-      }
-    };
-
-    window.visualViewport?.addEventListener('resize', handleVisualViewport);
-    window.visualViewport?.addEventListener('scroll', handleVisualViewport);
-    handleVisualViewport(); // Initial call
-    
-    return () => {
-      window.visualViewport?.removeEventListener('resize', handleVisualViewport);
-      window.visualViewport?.removeEventListener('scroll', handleVisualViewport);
-    };
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'auto'; };
   }, []);
-
-  // Auto-scroll à chaque message ou début de chargement
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [messages, loading]);
 
   useEffect(() => {
     localStorage.setItem(historyKey, JSON.stringify(messages));
@@ -242,6 +216,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
     }
 
     const userMsg = input;
+    // On ajoute le message en haut de la liste pour flex-col-reverse
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     
     const newCount = globalUsage + 1;
@@ -259,14 +234,17 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         body: JSON.stringify({ message: userMsg, voyanteId: psychic.id, userId: session?.user?.id || 'anonymous', isPremium })
       });
       const data = await response.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Je reçois une image floue, pouvez-vous préciser ?" }]);
-    } catch (e) { setMessages(prev => [...prev, { role: 'assistant', content: "Connexion instable. Réessayez." }]); }
+      setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Je reçois une image floue..." }]);
+    } catch (e) { setMessages(prev => [...prev, { role: 'assistant', content: "Connexion instable..." }]); }
     finally { setLoading(false); }
   };
 
+  // On inverse l'ordre des messages pour flex-col-reverse
+  const reversedMessages = [...messages].reverse();
+
   return (
-    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto overflow-hidden shadow-2xl" style={{ height: viewportHeight }}>
-      {/* HEADER FIXE */}
+    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none">
+      {/* HEADER */}
       <div className="flex items-center gap-4 py-3 px-4 border-b bg-white flex-shrink-0 z-10">
         <button onClick={onGoBack} className="p-1.5 bg-slate-50 rounded-full active:scale-90 transition-transform"><ArrowLeft size={20}/></button>
         <div className="relative">
@@ -285,18 +263,23 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         </div>
       )}
 
-      {/* ZONE DE MESSAGES SCROLLABLE */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/30">
-        {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
-            <div className={`max-w-[85%] p-3.5 rounded-2xl text-[15px] leading-snug shadow-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'}`}>
-              {m.content}
+      {/* ZONE DE MESSAGES - Utilise flex-col-reverse pour coller au bas */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col-reverse bg-slate-50/30">
+        <div className="h-2 flex-shrink-0" /> {/* Petit padding en bas */}
+
+        {limitReached && (
+          <div className="bg-white border-2 border-indigo-600 p-6 rounded-3xl text-center space-y-4 shadow-xl my-4">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto"><Sparkles /></div>
+            <div>
+              <p className="text-sm font-bold text-indigo-900 leading-tight">Limite atteinte</p>
+              <p className="text-[11px] text-slate-500 mt-1">Vos messages offerts ont été utilisés. Passez Premium pour continuer.</p>
             </div>
+            <Button onClick={onAction} className="w-full text-xs font-bold uppercase py-4 shadow-md">Continuer maintenant ({PRICE_TEXT})</Button>
           </div>
-        ))}
-        
+        )}
+
         {loading && (
-          <div className="flex justify-start">
+          <div className="flex justify-start mb-4 animate-in fade-in duration-300">
             <div className="bg-white border border-slate-100 p-4 rounded-2xl rounded-bl-none shadow-sm flex gap-1.5">
               <div className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
               <div className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
@@ -304,30 +287,24 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
             </div>
           </div>
         )}
-        
-        {limitReached && (
-          <div className="bg-white border-2 border-indigo-600 p-6 rounded-3xl text-center space-y-4 shadow-xl my-4">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto"><Sparkles /></div>
-            <div>
-              <p className="text-sm font-bold text-indigo-900 leading-tight">Limite atteinte</p>
-              <p className="text-[11px] text-slate-500 mt-1">Vos messages offerts ont été utilisés. Devenez Premium pour continuer la discussion.</p>
+
+        {reversedMessages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 animate-in slide-in-from-bottom-2 duration-300`}>
+            <div className={`max-w-[85%] p-3.5 rounded-2xl text-[15px] leading-snug shadow-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'}`}>
+              {m.content}
             </div>
-            <Button onClick={onAction} className="w-full text-xs font-bold uppercase py-4 shadow-md">Continuer maintenant ({PRICE_TEXT})</Button>
           </div>
-        )}
-        
-        {/* ELEMENT POUR FORCE LE SCROLL TOUT EN BAS */}
-        <div ref={scrollRef} className="h-4 w-full flex-shrink-0" />
+        ))}
       </div>
       
-      {/* INPUT FIXÉ EN BAS */}
+      {/* INPUT */}
       {!limitReached && (
         <div className="p-3 border-t bg-white flex gap-2 flex-shrink-0">
           <input 
             value={input} 
             onChange={e=>setInput(e.target.value)} 
             onKeyPress={e=>e.key==='Enter' && handleSend()} 
-            placeholder="Écrivez votre question ici..." 
+            placeholder="Écrivez ici..." 
             className="flex-1 bg-slate-50 rounded-2xl px-4 py-3 text-[16px] outline-none border border-transparent focus:border-indigo-100" 
             enterKeyHint="send" 
           />
