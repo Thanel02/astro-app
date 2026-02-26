@@ -174,7 +174,7 @@ const AuthView = ({ onAuthSuccess, onSwitchToLogin, isLoginMode, onCancel }) => 
   );
 };
 
-// --- CHAT SYSTEM (GLOBAL LIMIT + SMS STYLE) ---
+// --- CHAT SYSTEM (SMS STYLE + KEYBOARD FIX) ---
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const historyKey = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
   const globalCountKey = `astro_global_count_${session?.user?.id || 'anon'}`;
@@ -194,23 +194,35 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [viewportHeight, setViewportHeight] = useState('100dvh');
   const scrollRef = useRef(null);
 
-  // Auto-scroll à chaque changement de messages ou statut loading
+  // GESTION DU CLAVIER MOBILE
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, loading]);
+    const handleVisualViewport = () => {
+      if (window.visualViewport) {
+        setViewportHeight(`${window.visualViewport.height}px`);
+        // On scroll vers le bas dès que la taille change (clavier)
+        setTimeout(() => {
+          scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }, 100);
+      }
+    };
 
-  useEffect(() => {
-    const up = () => { if (window.visualViewport) { setViewportHeight(`${window.visualViewport.height}px`); setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 150); } };
-    window.visualViewport?.addEventListener('resize', up);
-    window.visualViewport?.addEventListener('scroll', up);
-    up();
+    window.visualViewport?.addEventListener('resize', handleVisualViewport);
+    window.visualViewport?.addEventListener('scroll', handleVisualViewport);
+    handleVisualViewport(); // Initial call
+    
     return () => {
-      window.visualViewport?.removeEventListener('resize', up);
-      window.visualViewport?.removeEventListener('scroll', up);
+      window.visualViewport?.removeEventListener('resize', handleVisualViewport);
+      window.visualViewport?.removeEventListener('scroll', handleVisualViewport);
     };
   }, []);
+
+  // Auto-scroll à chaque message ou début de chargement
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [messages, loading]);
 
   useEffect(() => {
     localStorage.setItem(historyKey, JSON.stringify(messages));
@@ -253,11 +265,12 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto overflow-hidden" style={{ height: viewportHeight }}>
-      <div className="flex items-center gap-4 py-3 px-4 border-b bg-white flex-shrink-0">
-        <button onClick={onGoBack} className="p-1.5 bg-slate-50 rounded-full"><ArrowLeft size={20}/></button>
+    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto overflow-hidden shadow-2xl" style={{ height: viewportHeight }}>
+      {/* HEADER FIXE */}
+      <div className="flex items-center gap-4 py-3 px-4 border-b bg-white flex-shrink-0 z-10">
+        <button onClick={onGoBack} className="p-1.5 bg-slate-50 rounded-full active:scale-90 transition-transform"><ArrowLeft size={20}/></button>
         <div className="relative">
-          <img src={psychic.image} className="w-10 h-10 rounded-full object-cover" />
+          <img src={psychic.image} className="w-10 h-10 rounded-full object-cover border" />
           <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
         </div>
         <div>
@@ -267,58 +280,58 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       </div>
       
       {!isPremium && (
-        <div className="bg-indigo-50 px-4 py-1.5 text-[10px] text-indigo-700 text-center font-medium border-b border-indigo-100">
-          🎁 {globalUsage >= FREE_CHAT_LIMIT ? 'Offre terminée' : `Crédit : ${FREE_CHAT_LIMIT - globalUsage} messages gratuits restants`}
+        <div className="bg-indigo-50 px-4 py-1 text-[10px] text-indigo-700 text-center font-bold border-b border-indigo-100 flex-shrink-0">
+          🎁 {globalUsage >= FREE_CHAT_LIMIT ? 'Crédit épuisé' : `Crédit : ${FREE_CHAT_LIMIT - globalUsage} messages gratuits restants`}
         </div>
       )}
 
-      {/* ZONE DE MESSAGES STYLE SMS */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/30 scroll-smooth">
+      {/* ZONE DE MESSAGES SCROLLABLE */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/30">
         {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-3.5 rounded-2xl text-[15px] leading-snug ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none shadow-sm' : 'bg-white border text-slate-700 rounded-bl-none shadow-sm'}`}>
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
+            <div className={`max-w-[85%] p-3.5 rounded-2xl text-[15px] leading-snug shadow-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'}`}>
               {m.content}
             </div>
           </div>
         ))}
         
-        {/* SIMULATION ÉCRITURE VOYANTE */}
         {loading && (
-          <div className="flex justify-start animate-in fade-in duration-300">
-            <div className="bg-white border p-4 rounded-2xl rounded-bl-none shadow-sm flex gap-1">
-              <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-              <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-              <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce"></div>
+          <div className="flex justify-start">
+            <div className="bg-white border border-slate-100 p-4 rounded-2xl rounded-bl-none shadow-sm flex gap-1.5">
+              <div className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+              <div className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+              <div className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce"></div>
             </div>
           </div>
         )}
         
         {limitReached && (
-          <div className="bg-white border-2 border-indigo-600 p-6 rounded-3xl text-center space-y-4 shadow-xl animate-in zoom-in-95">
-            <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto"><Sparkles /></div>
+          <div className="bg-white border-2 border-indigo-600 p-6 rounded-3xl text-center space-y-4 shadow-xl my-4">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto"><Sparkles /></div>
             <div>
-              <p className="text-sm font-bold text-indigo-900">Limite atteinte</p>
-              <p className="text-[11px] text-slate-500 mt-1">Vous avez utilisé vos {FREE_CHAT_LIMIT} messages offerts. Passez Premium pour continuer.</p>
+              <p className="text-sm font-bold text-indigo-900 leading-tight">Limite atteinte</p>
+              <p className="text-[11px] text-slate-500 mt-1">Vos messages offerts ont été utilisés. Devenez Premium pour continuer la discussion.</p>
             </div>
-            <Button onClick={onAction} className="w-full text-xs font-bold uppercase py-4 shadow-lg">Continuer maintenant ({PRICE_TEXT})</Button>
+            <Button onClick={onAction} className="w-full text-xs font-bold uppercase py-4 shadow-md">Continuer maintenant ({PRICE_TEXT})</Button>
           </div>
         )}
         
-        {/* ELEMENT POUR LE SCROLL AUTOMATIQUE */}
-        <div ref={scrollRef} className="h-4 w-full" />
+        {/* ELEMENT POUR FORCE LE SCROLL TOUT EN BAS */}
+        <div ref={scrollRef} className="h-4 w-full flex-shrink-0" />
       </div>
       
+      {/* INPUT FIXÉ EN BAS */}
       {!limitReached && (
-        <div className="p-3 border-t bg-white flex gap-2 flex-shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="p-3 border-t bg-white flex gap-2 flex-shrink-0">
           <input 
             value={input} 
             onChange={e=>setInput(e.target.value)} 
             onKeyPress={e=>e.key==='Enter' && handleSend()} 
             placeholder="Écrivez votre question ici..." 
-            className="flex-1 bg-slate-50 rounded-xl px-4 py-3 text-[16px] outline-none border border-transparent focus:border-indigo-200" 
+            className="flex-1 bg-slate-50 rounded-2xl px-4 py-3 text-[16px] outline-none border border-transparent focus:border-indigo-100" 
             enterKeyHint="send" 
           />
-          <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-xl shadow-md active:bg-indigo-700 transition-colors"><Send size={20}/></button>
+          <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg active:scale-90 transition-transform"><Send size={20}/></button>
         </div>
       )}
     </div>
