@@ -97,7 +97,7 @@ const AuthView = ({ onAuthSuccess, isLoginMode, onCancel, onSwitchToLogin }) => 
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400"><X size={20}/></button>
         <div className="mb-6 inline-flex p-3 bg-indigo-50 rounded-full text-indigo-600"><Lock size={24}/></div>
         <h2 className="text-2xl font-bold font-serif text-indigo-900">{isLoginMode ? 'Connexion' : 'Accéder à ma réponse'}</h2>
-        <p className="text-xs text-slate-500 mt-2 mb-6">{isLoginMode ? 'Identifiez-vous pour continuer.' : 'Créez votre accès pour découvrir ce que la voyante a révélé.'}</p>
+        <p className="text-xs text-slate-500 mt-2 mb-6">{isLoginMode ? 'Identifiez-vous pour continuer votre chat.' : 'Créez votre accès pour découvrir ce que la voyante a révélé.'}</p>
         <div className="space-y-4">
           <input type="email" placeholder="Votre email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none text-[16px]"/>
           <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none text-[16px]"/>
@@ -121,8 +121,13 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [loading, setLoading] = useState(false);
   const [typingStatus, setTypingStatus] = useState("");
 
+  useEffect(() => {
+    const key = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
+    localStorage.setItem(key, JSON.stringify(messages));
+  }, [messages]);
+
   const handleSend = async () => {
-    if (!input.trim() || loading || (!isPremium && messages.length >= 3)) return;
+    if (!input.trim() || loading || (!isPremium && messages.filter(m => m.role === 'user').length >= 1)) return;
     const userMsg = input;
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setInput('');
@@ -161,10 +166,10 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col-reverse bg-slate-50/30">
         <div className="h-4 flex-shrink-0" />
-        {loading && <div className="flex justify-start mb-4"><div className="bg-white border p-4 rounded-2xl rounded-bl-none shadow-sm italic text-[11px] text-indigo-400 font-bold tracking-tighter uppercase">{typingStatus}</div></div>}
+        {loading && <div className="flex justify-start mb-4"><div className="bg-white border p-4 rounded-2xl rounded-bl-none shadow-sm italic text-[11px] text-indigo-400 font-bold uppercase tracking-tighter uppercase">{typingStatus}</div></div>}
         
         {[...messages].reverse().map((m, i) => {
-          const isBlurry = !isPremium && m.role === 'assistant' && i === 0 && messages.length > 1;
+          const isBlurry = !isPremium && m.role === 'assistant' && messages.filter(msg => msg.role === 'user').length >= 1 && i === 0;
           return (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 relative`}>
               <div className={`max-w-[85%] p-4 rounded-2xl text-[16px] shadow-sm transition-all ${
@@ -183,6 +188,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
                         <button onClick={onAction} className="bg-indigo-600 text-white text-[12px] font-black px-6 py-3 rounded-full uppercase shadow-xl hover:bg-indigo-700 transition-all">
                             VOIR MA RÉPONSE ({PRICE_TEXT})
                         </button>
+                        <p className="mt-3 text-[10px] text-slate-400 font-bold italic tracking-tight">Libellé bancaire discret : "Altéo Conseil"</p>
                     </div>
                 </div>
               )}
@@ -191,9 +197,9 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         })}
       </div>
 
-      {!(!isPremium && messages.length >= 3) && (
+      {!( !isPremium && messages.filter(m => m.role === 'user').length >= 1 ) && (
         <div className="p-3 border-t bg-white flex gap-2 flex-shrink-0">
-          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Écrivez votre question..." className="flex-1 bg-slate-50 rounded-2xl px-4 py-3 text-[16px] outline-none border border-transparent focus:border-indigo-100" />
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question ici..." className="flex-1 bg-slate-50 rounded-2xl px-4 py-3 text-[16px] outline-none border border-transparent focus:border-indigo-100" />
           <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg active:scale-90 transition-transform"><Send size={20}/></button>
         </div>
       )}
@@ -222,9 +228,11 @@ export default function App() {
     if (session?.user) {
       supabase.from('profiles').select('is_premium').eq('id', session.user.id).single()
         .then(({data}) => {
-            setIsPremium(!!data?.is_premium);
-            if (viewState === 'auth' && !data?.is_premium) {
-                window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
+            const premiumStatus = !!data?.is_premium;
+            setIsPremium(premiumStatus);
+            if (viewState === 'auth') {
+                if (premiumStatus) setViewState('list');
+                else window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
             }
         });
     }
@@ -244,7 +252,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      <Helmet><title>AstroPure | Voyance Privée & Horoscope</title></Helmet>
+      <Helmet><title>AstroPure | Cabinet de Voyance Spécialisée</title></Helmet>
 
       {viewState === 'list' && !selectedPsychic && !selectedSign && (
         <div className="bg-indigo-900 text-white text-[9px] py-2.5 text-center font-black flex items-center justify-center gap-3 uppercase tracking-widest z-[60]">
@@ -305,8 +313,15 @@ export default function App() {
                                 <div className="absolute top-4 right-4 bg-emerald-100 text-emerald-600 text-[8px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1"><div className="w-1 h-1 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>
                                 <img src={p.image} className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md group-hover:scale-105 transition-transform" />
                                 <div className="flex flex-col items-center gap-1 mb-3">
-                                  <div className="flex justify-center gap-1 text-amber-500"><Star size={12} fill="currentColor" /> <span className="text-xs font-bold text-slate-700">{p.rating}</span></div>
-                                  <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold tracking-tighter"><Users size={12}/> <span>{p.reviews.toLocaleString()} consultations</span></div>
+                                  <div className="flex items-center justify-center gap-1">
+                                      <div className="flex text-amber-500">
+                                        {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+                                      </div>
+                                      <span className="text-xs font-bold text-slate-700 ml-1">{p.rating}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold tracking-tighter">
+                                      <Users size={12}/> <span>{p.reviews.toLocaleString()} consultations</span>
+                                  </div>
                                 </div>
                                 <h3 className="font-bold text-xl text-indigo-900">{p.name}</h3>
                                 <p className="text-indigo-600 text-[10px] font-black uppercase mb-3 tracking-widest">{p.style}</p>
@@ -316,7 +331,10 @@ export default function App() {
                         ))}
                     </div>
                     <div className="mt-12 bg-white p-8 rounded-[2rem] border border-slate-100 text-center space-y-4">
-                        <div className="flex justify-center gap-8 opacity-40 h-5 grayscale"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" /><img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" /></div>
+                        <div className="flex justify-center gap-8 opacity-60">
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-4" alt="Visa" />
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-4" alt="Mastercard" />
+                        </div>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Paiement Sécurisé & Débit Discret (Libellé : Altéo Conseil)</p>
                     </div>
                 </div>
@@ -325,16 +343,14 @@ export default function App() {
         )}
       </main>
 
-      {viewState === 'list' && !selectedPsychic && (
-        <div className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t h-20 flex items-center justify-around z-50 px-6 shadow-2xl">
-          <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(null); setSelectedSign(null); }} className={`flex flex-col items-center gap-1.5 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}>
-            <MessageCircle size={24} fill={activeTab === 'voyance' ? "currentColor" : "none"}/><span className="text-[10px] uppercase font-black">Voyance</span>
-          </button>
-          <button onClick={() => { setActiveTab('horoscope'); setSelectedSign(null); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1.5 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}>
-            <Moon size={24} fill={activeTab === 'horoscope' ? "currentColor" : "none"}/><span className="text-[10px] uppercase font-black">Horoscope</span>
-          </button>
-        </div>
-      )}
+      <div className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t h-20 flex items-center justify-around z-50 px-6 shadow-2xl">
+        <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(null); setSelectedSign(null); }} className={`flex flex-col items-center gap-1.5 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}>
+          <MessageCircle size={24} fill={activeTab === 'voyance' ? "currentColor" : "none"}/><span className="text-[10px] uppercase font-black">Voyance</span>
+        </button>
+        <button onClick={() => { setActiveTab('horoscope'); setSelectedSign(null); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1.5 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}>
+          <Moon size={24} fill={activeTab === 'horoscope' ? "currentColor" : "none"}/><span className="text-[10px] uppercase font-black">Horoscope</span>
+        </button>
+      </div>
     </div>
   );
 }
