@@ -112,22 +112,33 @@ const AuthView = ({ onAuthSuccess, isLoginMode, onCancel, onSwitchToLogin }) => 
 };
 
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
+  // --- LOGIQUE DE SAUVEGARDE & CACHE ---
   const [messages, setMessages] = useState(() => {
-    const key = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : [{ role: 'assistant', content: psychic.welcome }];
+    const historyKey = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
+    const saved = localStorage.getItem(historyKey);
+    if (saved) return JSON.parse(saved);
+    
+    // Si connecté, on essaie de récupérer le cache de quand on était anonyme (transition fluide)
+    if (session?.user?.id) {
+        const anonSaved = localStorage.getItem(`astro_hist_${psychic.id}_anon`);
+        if (anonSaved) return JSON.parse(anonSaved);
+    }
+    return [{ role: 'assistant', content: psychic.welcome }];
   });
+
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [typingStatus, setTypingStatus] = useState("");
 
   useEffect(() => {
-    const key = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
-    localStorage.setItem(key, JSON.stringify(messages));
-  }, [messages]);
+    const historyKey = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
+    localStorage.setItem(historyKey, JSON.stringify(messages));
+  }, [messages, session, psychic.id]);
 
   const handleSend = async () => {
-    if (!input.trim() || loading || (!isPremium && messages.filter(m => m.role === 'user').length >= 1)) return;
+    const userMsgCount = messages.filter(m => m.role === 'user').length;
+    if (!input.trim() || loading || (!isPremium && userMsgCount >= 1)) return;
+
     const userMsg = input;
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setInput('');
@@ -141,7 +152,13 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       const response = await fetch(N8N_CHAT_WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg, voyanteId: psychic.id, userId: session?.user?.id || 'anonymous', isPremium })
+        body: JSON.stringify({ 
+            message: userMsg, 
+            voyanteId: psychic.id, 
+            userId: session?.user?.id || 'anonymous', 
+            isPremium,
+            history: messages.slice(-5)
+        })
       });
       const data = await response.json();
       clearInterval(interval);
@@ -155,7 +172,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       <div className="flex items-center gap-4 py-3 px-4 border-b bg-white flex-shrink-0 z-10 shadow-sm">
         <button onClick={onGoBack} className="p-1.5 bg-slate-50 rounded-full"><ArrowLeft size={20}/></button>
         <div className="relative">
-          <img src={psychic.image} className="w-10 h-10 rounded-full object-cover border" />
+          <img src={psychic.image} className="w-10 h-10 rounded-full object-cover border" alt={psychic.name} />
           <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
         </div>
         <div className="flex-1">
@@ -166,9 +183,10 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col-reverse bg-slate-50/30">
         <div className="h-4 flex-shrink-0" />
-        {loading && <div className="flex justify-start mb-4"><div className="bg-white border p-4 rounded-2xl rounded-bl-none shadow-sm italic text-[11px] text-indigo-400 font-bold uppercase tracking-tighter uppercase">{typingStatus}</div></div>}
+        {loading && <div className="flex justify-start mb-4"><div className="bg-white border p-4 rounded-2xl rounded-bl-none shadow-sm italic text-[11px] text-indigo-400 font-bold tracking-tighter uppercase">{typingStatus}</div></div>}
         
         {[...messages].reverse().map((m, i) => {
+          // FLOU MARKETING : Uniquement sur la dernière réponse si pas premium et au moins 1 question posée
           const isBlurry = !isPremium && m.role === 'assistant' && messages.filter(msg => msg.role === 'user').length >= 1 && i === 0;
           return (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 relative`}>
@@ -312,6 +330,7 @@ export default function App() {
                                 {p.isTop && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[9px] font-black px-4 py-1.5 rounded-full uppercase shadow-sm">Expert Recommandé</div>}
                                 <div className="absolute top-4 right-4 bg-emerald-100 text-emerald-600 text-[8px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1"><div className="w-1 h-1 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>
                                 <img src={p.image} className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md group-hover:scale-105 transition-transform" />
+                                
                                 <div className="flex flex-col items-center gap-1 mb-3">
                                   <div className="flex items-center justify-center gap-1">
                                       <div className="flex text-amber-500">
@@ -323,6 +342,7 @@ export default function App() {
                                       <Users size={12}/> <span>{p.reviews.toLocaleString()} consultations</span>
                                   </div>
                                 </div>
+
                                 <h3 className="font-bold text-xl text-indigo-900">{p.name}</h3>
                                 <p className="text-indigo-600 text-[10px] font-black uppercase mb-3 tracking-widest">{p.style}</p>
                                 <p className="text-xs text-slate-500 leading-relaxed mb-6 h-auto min-h-[48px] italic">"{p.desc}"</p>
@@ -331,7 +351,7 @@ export default function App() {
                         ))}
                     </div>
                     <div className="mt-12 bg-white p-8 rounded-[2rem] border border-slate-100 text-center space-y-4">
-                        <div className="flex justify-center gap-8 opacity-60">
+                        <div className="flex justify-center gap-8 opacity-40">
                           <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-4" alt="Visa" />
                           <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-4" alt="Mastercard" />
                         </div>
