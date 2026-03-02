@@ -27,7 +27,7 @@ const VOYANTES = [
   { 
     id: 'nathalie', 
     name: 'Nathalie', 
-    desc: 'Experte en relations amoureuses et psychologie du couple. Elle analyse les non-dits et les intentions profondes.', 
+    desc: 'Experte reconnue en relations amoureuses et psychologie du couple. Elle analyse les non-dits, les blocages et les intentions profondes pour éclairer votre avenir sentimental.', 
     style: 'Analytique & Intuitive', 
     image: '/nathalie-voyante-astropure.png', 
     hook: "Je ressens ses intentions...", 
@@ -37,7 +37,7 @@ const VOYANTES = [
   { 
     id: 'caroline', 
     name: 'Caroline', 
-    desc: 'Médium pur de naissance. Ses flashs sont directs et sans complaisance.', 
+    desc: 'Médium pur de naissance. Ses flashs sont directs et sans complaisance pour une voyance sans détour.', 
     style: 'Sincère et Directe', 
     image: '/caroline-voyante-astropure.png', 
     hook: "Analyse urgente...", 
@@ -47,7 +47,7 @@ const VOYANTES = [
   { 
     id: 'pierre', 
     name: 'Maître Pierre', 
-    desc: 'Astrologue et Numérologue certifié. 30 ans d\'expertise sur les dates clés.', 
+    desc: 'Astrologue et Numérologue certifié. 30 ans d\'expertise sur les cycles de vie et les dates clés.', 
     style: 'Analytique et Expert', 
     image: '/pierre-voyant-astropure.png', 
     hook: "Configuration clé...", 
@@ -84,7 +84,7 @@ const AuthView = ({ onAuthSuccess, isLoginMode, onCancel, onSwitchToLogin }) => 
 
   return (
     <div className="flex items-center justify-center min-h-[70dvh] px-4">
-      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border text-center relative">
+      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border text-center relative border-indigo-50">
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400"><X size={20}/></button>
         <div className="mb-6 inline-flex p-3 bg-indigo-50 rounded-full text-indigo-600"><Lock size={24}/></div>
         <h2 className="text-2xl font-bold font-serif text-indigo-900">{isLoginMode ? 'Connexion' : 'Dernière étape'}</h2>
@@ -164,7 +164,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
             <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto"><Sparkles size={32} /></div>
             <div>
               <p className="text-xl font-black text-indigo-900 leading-tight">Flash en cours...</p>
-              <p className="text-sm text-slate-600 mt-3 leading-relaxed italic">"Je m'arrête un instant... Ce que je vois dans la suite de votre tirage est très précis. Je dois canaliser toute mon énergie pour vous transmettre cette vision sans erreur."</p>
+              <p className="text-sm text-slate-600 mt-3 leading-relaxed italic">"Je m'arrête un instant... Ce que je vois dans la suite de votre tirage est très précis concernant cette personne. Je dois canaliser toute mon énergie pour vous transmettre cette vision sans erreur."</p>
             </div>
             <Button onClick={onAction} className="w-full text-base font-black uppercase py-5 shadow-xl bg-indigo-600 hover:bg-indigo-700">CONTINUER MA CONSULTATION ({PRICE_TEXT})</Button>
             <div className="flex flex-col items-center gap-2 pt-2 border-t border-slate-100 opacity-70">
@@ -212,7 +212,6 @@ export default function App() {
       supabase.from('profiles').select('is_premium').eq('id', session.user.id).single()
         .then(({data}) => {
             setIsPremium(!!data?.is_premium);
-            // REDIRECTION STRIPE AUTOMATIQUE APRÈS INSCRIPTION/CONNEXION
             if (viewState === 'auth' && !data?.is_premium) {
                 window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
             }
@@ -221,25 +220,21 @@ export default function App() {
   }, [session, viewState]);
 
   const handleAction = () => {
-    if (!session) {
-      setViewState('auth'); // Inscription -> Redirection auto vers Stripe via useEffect
-    } else {
-      window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
-    }
+    if (!session) setViewState('auth');
+    else window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
   };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Helmet>
-        <title>AstroPure | Votre Consultation de Voyance Privée</title>
+        <title>AstroPure | Consultation de Voyance Privée Amoureuse</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/> 
       </Helmet>
 
-      {/* BANDEAU PROMO / URGENCE */}
       {viewState === 'list' && !selectedPsychic && (
         <div className="bg-indigo-600 text-white text-[10px] py-2.5 text-center font-black flex items-center justify-center gap-3 uppercase tracking-[0.2em] z-[60]">
           <Sparkles size={14} className="animate-pulse" />
-          OFFRE LIMITÉE : VOS 3 PREMIERS MESSAGES OFFERTS
+          OFFRE EXCEPTIONNELLE : VOS 3 PREMIERS MESSAGES OFFERTS
           <Sparkles size={14} className="animate-pulse" />
         </div>
       )}
@@ -269,8 +264,8 @@ export default function App() {
             ) : (
                 <div className="max-w-4xl mx-auto px-4 py-8">
                     <div className="text-center mb-10">
-                        <h1 className="text-3xl font-serif font-black text-indigo-900 leading-tight">Posez votre question en direct</h1>
-                        <p className="text-slate-500 text-sm mt-3 max-w-xs mx-auto">Recevez une guidance immédiate par chat privé avec nos médiums experts.</p>
+                        <h1 className="text-3xl font-serif font-black text-indigo-900 leading-tight">Votre Voyance Amoureuse en Direct</h1>
+                        <p className="text-slate-500 text-sm mt-3 max-w-xs mx-auto">Posez votre question sur votre avenir sentimental et recevez une réponse immédiate.</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -279,13 +274,19 @@ export default function App() {
                                 {p.isTop && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[9px] font-black px-4 py-1.5 rounded-full uppercase shadow-sm whitespace-nowrap">Expert Coup de Cœur</div>}
                                 <div className="absolute top-4 right-4 bg-emerald-100 text-emerald-600 text-[8px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1"><div className="w-1 h-1 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>
                                 <img src={p.image} className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md group-hover:scale-105 transition-transform" />
-                                <div className="flex justify-center gap-1 text-amber-500 mb-2">
-                                    {[...Array(5)].map((_, i) => <Star key={i} size={12} fill="currentColor" />)}
-                                    <span className="text-xs font-bold text-slate-700 ml-1">{p.rating}</span>
+                                <div className="flex flex-col items-center gap-1 mb-3">
+                                  <div className="flex justify-center gap-1 text-amber-500">
+                                      {[...Array(5)].map((_, i) => <Star key={i} size={12} fill="currentColor" />)}
+                                      <span className="text-xs font-bold text-slate-700 ml-1">{p.rating}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold tracking-tighter">
+                                      <Users size={12}/> <span>{p.reviews.toLocaleString()} consultations</span>
+                                  </div>
                                 </div>
                                 <h3 className="font-bold text-xl text-indigo-900">{p.name}</h3>
                                 <p className="text-indigo-600 text-[10px] font-black uppercase mb-3 tracking-widest">{p.style}</p>
-                                <p className="text-xs text-slate-500 leading-relaxed mb-6 h-12 overflow-hidden italic">"{p.desc}"</p>
+                                {/* Correction de la hauteur et du overflow pour le texte de description */}
+                                <p className="text-xs text-slate-500 leading-relaxed mb-6 h-auto min-h-[48px] italic">"{p.desc}"</p>
                                 <button className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-xs uppercase shadow-lg shadow-indigo-100 group-hover:bg-indigo-700">Démarrer le chat gratuit</button>
                             </div>
                         ))}
@@ -297,7 +298,7 @@ export default function App() {
                             <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" />
                             <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" />
                         </div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Paiement Sécurisé - Débit Bancaire Discret (Altéo Conseil)</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Paiement Sécurisé & Débit Bancaire Discret (Altéo Conseil)</p>
                     </div>
                 </div>
             )
@@ -314,10 +315,10 @@ export default function App() {
       {viewState === 'list' && !selectedPsychic && (
         <div className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t h-20 flex items-center justify-around z-50 px-6 shadow-2xl">
           <button onClick={() => setSelectedPsychic(null)} className="flex flex-col items-center gap-1.5 text-indigo-600 font-bold">
-            <MessageCircle size={24}/><span className="text-[10px] uppercase">Voyance</span>
+            <MessageCircle size={24}/><span className="text-[10px] uppercase font-black">Voyance Chat</span>
           </button>
           <div className="flex flex-col items-center gap-1.5 text-slate-300">
-            <Moon size={24}/><span className="text-[10px] uppercase">Horoscope</span>
+            <Moon size={24}/><span className="text-[10px] uppercase font-black">Horoscope</span>
           </div>
         </div>
       )}
