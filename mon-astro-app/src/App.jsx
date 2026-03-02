@@ -23,6 +23,22 @@ const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supaba
 
 ReactGA.initialize(GA_MEASUREMENT_ID);
 
+// --- CONSTANTES ---
+const ZODIAC_SIGNS = [
+  { id: 'belier', name: 'Bélier', icon: '♈' },
+  { id: 'taureau', name: 'Taureau', icon: '♉' },
+  { id: 'gemeaux', name: 'Gémeaux', icon: '♊' },
+  { id: 'cancer', name: 'Cancer', icon: '♋' },
+  { id: 'lion', name: 'Lion', icon: '♌' },
+  { id: 'vierge', name: 'Vierge', icon: '♍' },
+  { id: 'balance', name: 'Balance', icon: '♎' },
+  { id: 'scorpion', name: 'Scorpion', icon: '♏' },
+  { id: 'sagittaire', name: 'Sagittaire', icon: '♐' },
+  { id: 'capricorne', name: 'Capricorne', icon: '♑' },
+  { id: 'verseau', name: 'Verseau', icon: '♒' },
+  { id: 'poissons', name: 'Poissons', icon: '♓' },
+];
+
 const VOYANTES = [
   { 
     id: 'nathalie', 
@@ -56,6 +72,7 @@ const VOYANTES = [
   }
 ];
 
+// --- COMPOSANTS ---
 const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }) => {
   const baseStyle = "px-6 py-4 rounded-full font-bold transition-all duration-300 transform active:scale-95 shadow-sm flex items-center justify-center text-base";
   const variants = { primary: "bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-slate-300", secondary: "bg-white text-indigo-900 border border-indigo-100" };
@@ -193,12 +210,16 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   );
 };
 
+// --- APP ---
 export default function App() {
+  const [activeTab, setActiveTab] = useState('voyance'); 
   const [viewState, setViewState] = useState('list'); 
+  const [isLoginMode, setIsLoginMode] = useState(false);
+  const [selectedSign, setSelectedSign] = useState(null);
   const [selectedPsychic, setSelectedPsychic] = useState(null);
   const [session, setSession] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
-  const [isLoginMode, setIsLoginMode] = useState(false);
+  const [horoscope, setHoroscope] = useState(null);
 
   useEffect(() => {
     if (!supabase) return;
@@ -212,6 +233,7 @@ export default function App() {
       supabase.from('profiles').select('is_premium').eq('id', session.user.id).single()
         .then(({data}) => {
             setIsPremium(!!data?.is_premium);
+            // REDIRECTION STRIPE APRÈS AUTH
             if (viewState === 'auth' && !data?.is_premium) {
                 window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
             }
@@ -219,28 +241,37 @@ export default function App() {
     }
   }, [session, viewState]);
 
+  useEffect(() => {
+    if (selectedSign && supabase) {
+      supabase.from('weekly_horoscopes').select('*').eq('sign_id', selectedSign.name).order('week_start_date', { ascending: false }).limit(1).single()
+        .then(({data}) => setHoroscope(data));
+      ReactGA.send({ hitType: "pageview", page: `/horoscope/${selectedSign.id}` });
+    }
+  }, [selectedSign]);
+
   const handleAction = () => {
     if (!session) setViewState('auth');
     else window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <Helmet>
-        <title>AstroPure | Consultation de Voyance Privée Amoureuse</title>
+        <title>AstroPure | Voyance Privée & Horoscope</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/> 
       </Helmet>
 
+      {/* BANDEAU PROMO */}
       {viewState === 'list' && !selectedPsychic && (
         <div className="bg-indigo-600 text-white text-[10px] py-2.5 text-center font-black flex items-center justify-center gap-3 uppercase tracking-[0.2em] z-[60]">
           <Sparkles size={14} className="animate-pulse" />
-          OFFRE EXCEPTIONNELLE : VOS 3 PREMIERS MESSAGES OFFERTS
+          OFFRE LIMITÉE : VOS 3 PREMIERS MESSAGES OFFERTS
           <Sparkles size={14} className="animate-pulse" />
         </div>
       )}
 
       <nav className="bg-white border-b h-16 flex items-center justify-between px-4 sticky top-0 z-50">
-        <div className="font-serif font-bold text-xl text-indigo-900 flex items-center gap-2 cursor-pointer" onClick={() => {setViewState('list'); setSelectedPsychic(null);}}>
+        <div className="font-serif font-bold text-xl text-indigo-900 flex items-center gap-2 cursor-pointer" onClick={() => {setViewState('list'); setSelectedPsychic(null); setSelectedSign(null); setHoroscope(null);}}>
           <Moon className="text-indigo-600" size={24} fill="currentColor"/> AstroPure
         </div>
         {session ? (
@@ -259,6 +290,38 @@ export default function App() {
               onSwitchToLogin={() => setIsLoginMode(!isLoginMode)}
             />
         ) : (
+          activeTab === 'horoscope' ? (
+            selectedSign ? (
+              <div className="max-w-2xl mx-auto p-4 animate-in fade-in">
+                <button onClick={() => { setSelectedSign(null); setHoroscope(null); }} className="mb-4 flex items-center text-slate-400 text-sm"><ArrowLeft size={18} className="mr-2"/>Retour</button>
+                <div className="bg-white p-6 rounded-3xl border shadow-sm space-y-6">
+                  <h2 className="text-2xl font-serif font-bold text-indigo-900">{selectedSign.icon} Horoscope {selectedSign.name}</h2>
+                  <p className="text-slate-700 leading-relaxed italic text-lg border-l-4 border-indigo-100 pl-4">"{horoscope?.intro || "Les astres révèlent une configuration rare..."}"</p>
+                  <div className="grid gap-6">
+                    <div className="bg-rose-50/50 p-4 rounded-2xl"><h3 className="font-bold text-rose-600 border-b border-rose-100 text-[10px] uppercase mb-2">Cœur & Sentiments</h3><p className="text-sm text-slate-600">{horoscope?.love || "Le climat astral se stabilise..."}</p></div>
+                    <div className="bg-emerald-50/50 p-4 rounded-2xl"><h3 className="font-bold text-emerald-700 border-b border-emerald-100 text-[10px] uppercase mb-2">Carrière & Projets</h3><p className="text-sm text-slate-600">{horoscope?.work || "Une opportunité se dessine..."}</p></div>
+                  </div>
+                  {!isPremium && <div className="p-6 bg-indigo-900 text-white rounded-3xl text-center shadow-xl"><Lock size={32} className="mx-auto mb-3 text-indigo-300"/><h4 className="font-bold mb-1">Rapport Complet Verrouillé</h4><p className="text-xs mb-4 text-indigo-200">Accédez à vos prévisions <strong>Famille</strong> et <strong>Chance</strong>.</p><Button onClick={handleAction} variant="secondary" className="w-full text-indigo-900 font-bold">DÉBLOQUER POUR {PRICE_TEXT}</Button></div>}
+                  {isPremium && (
+                    <div className="space-y-6">
+                      <div className="bg-amber-50/50 p-4 rounded-2xl"><h3 className="font-bold text-amber-700 border-b border-amber-100 text-[10px] uppercase mb-2">Famille & Entourage</h3><p className="text-sm text-slate-600">{horoscope?.family}</p></div>
+                      <div className="bg-indigo-50/50 p-4 rounded-2xl"><h3 className="font-bold text-indigo-700 border-b border-indigo-100 text-[10px] uppercase mb-2">Chance & Opportunités</h3><p className="text-sm text-slate-600">{horoscope?.luck}</p></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="max-w-5xl mx-auto px-4 py-8">
+                <div className="text-center mb-10">
+                  <h1 className="text-3xl font-serif font-black text-indigo-900">Horoscope Hebdomadaire</h1>
+                  <p className="text-slate-500 text-sm mt-2">Découvrez les messages des astres pour votre signe.</p>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {ZODIAC_SIGNS.map(s => <div key={s.id} onClick={() => setSelectedSign(s)} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 cursor-pointer hover:border-indigo-300 transition-all text-center group"><div className="text-4xl mb-2 group-hover:scale-110 transition-transform">{s.icon}</div><div className="font-bold text-indigo-900">{s.name}</div></div>)}
+                </div>
+              </div>
+            )
+          ) : (
             selectedPsychic ? (
                 <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={handleAction} session={session} />
             ) : (
@@ -285,7 +348,6 @@ export default function App() {
                                 </div>
                                 <h3 className="font-bold text-xl text-indigo-900">{p.name}</h3>
                                 <p className="text-indigo-600 text-[10px] font-black uppercase mb-3 tracking-widest">{p.style}</p>
-                                {/* Correction de la hauteur et du overflow pour le texte de description */}
                                 <p className="text-xs text-slate-500 leading-relaxed mb-6 h-auto min-h-[48px] italic">"{p.desc}"</p>
                                 <button className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-xs uppercase shadow-lg shadow-indigo-100 group-hover:bg-indigo-700">Démarrer le chat gratuit</button>
                             </div>
@@ -302,25 +364,29 @@ export default function App() {
                     </div>
                 </div>
             )
+          )
         )}
       </main>
+
+      {/* FOOTER & NAV BASSE */}
+      {viewState === 'list' && !selectedPsychic && (
+        <div className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t h-20 flex items-center justify-around z-50 px-6 shadow-2xl">
+          <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(null); setSelectedSign(null); }} className={`flex flex-col items-center gap-1.5 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}>
+            <MessageCircle size={24} fill={activeTab === 'voyance' ? "currentColor" : "none"}/>
+            <span className="text-[10px] uppercase font-black tracking-tighter">Voyance</span>
+          </button>
+          <button onClick={() => { setActiveTab('horoscope'); setSelectedSign(null); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1.5 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}>
+            <Moon size={24} fill={activeTab === 'horoscope' ? "currentColor" : "none"}/>
+            <span className="text-[10px] uppercase font-black tracking-tighter">Horoscope</span>
+          </button>
+        </div>
+      )}
 
       {viewState === 'list' && !selectedPsychic && (
         <footer className="text-center py-10 text-slate-400 text-[10px] pb-32">
             <p>© 2026 AstroPure - Mentions Légales - CGV</p>
             <p className="max-w-xs mx-auto mt-2 italic">Service de divertissement réservé aux personnes majeures.</p>
         </footer>
-      )}
-
-      {viewState === 'list' && !selectedPsychic && (
-        <div className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t h-20 flex items-center justify-around z-50 px-6 shadow-2xl">
-          <button onClick={() => setSelectedPsychic(null)} className="flex flex-col items-center gap-1.5 text-indigo-600 font-bold">
-            <MessageCircle size={24}/><span className="text-[10px] uppercase font-black">Voyance Chat</span>
-          </button>
-          <div className="flex flex-col items-center gap-1.5 text-slate-300">
-            <Moon size={24}/><span className="text-[10px] uppercase font-black">Horoscope</span>
-          </div>
-        </div>
       )}
     </div>
   );
