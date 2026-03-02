@@ -201,7 +201,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
                     <div className="bg-white/95 p-5 rounded-3xl shadow-2xl border border-indigo-100 text-center animate-in zoom-in-95">
                         <Sparkles size={24} className="text-indigo-600 mx-auto mb-2 animate-pulse" />
                         <p className="text-[13px] font-black text-indigo-900 leading-tight mb-4">
-                            {psychic.name} a répondu à votre question.<br/>Découvrez votre vérité maintenant.
+                            {psychic.name} a répondu à votre question.<br/>Découvrez votre vérité maintenant.<br/>Discutez en illimité.
                         </p>
                         <button onClick={onAction} className="bg-indigo-600 text-white text-[12px] font-black px-6 py-3 rounded-full uppercase shadow-xl hover:bg-indigo-700 transition-all">
                             VOIR MA RÉPONSE ({PRICE_TEXT})
