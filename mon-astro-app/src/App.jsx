@@ -14,6 +14,7 @@ const STRIPE_LINK = "https://buy.stripe.com/6oUdR8gX08J0cbO2q0dAk00";
 const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook/chat-voyance";
 const CONTACT_EMAIL = "gestion@alteoconseil.fr";
 const PRICE_TEXT = "2,99€/mois";
+const FREE_CHAT_LIMIT = 2; 
 const GA_MEASUREMENT_ID = "G-V5V2VV84LG"; 
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -22,6 +23,7 @@ const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supaba
 
 ReactGA.initialize(GA_MEASUREMENT_ID);
 
+// --- CONSTANTES ---
 const ZODIAC_SIGNS = [
   { id: 'belier', name: 'Bélier', icon: '♈' }, { id: 'taureau', name: 'Taureau', icon: '♉' },
   { id: 'gemeaux', name: 'Gémeaux', icon: '♊' }, { id: 'cancer', name: 'Cancer', icon: '♋' },
@@ -64,6 +66,7 @@ const VOYANTES = [
   }
 ];
 
+// --- COMPOSANTS ---
 const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }) => {
   const baseStyle = "px-6 py-4 rounded-full font-bold transition-all duration-300 transform active:scale-95 shadow-sm flex items-center justify-center text-base";
   const variants = { primary: "bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-slate-300", secondary: "bg-white text-indigo-900 border border-indigo-100" };
@@ -100,7 +103,7 @@ const AuthView = ({ onAuthSuccess, isLoginMode, onCancel, onSwitchToLogin }) => 
         <div className="space-y-4">
           <input type="email" placeholder="Votre email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none text-[16px]"/>
           <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none text-[16px]"/>
-          <Button onClick={handleAuth} disabled={loading} className="w-full">{loading ? <Loader2 className="animate-spin mx-auto"/> : (isLoginMode ? "Se connecter" : "Continuer vers le salon privé")}</Button>
+          <Button onClick={handleAuth} disabled={loading} className="w-full">{loading ? <Loader2 className="animate-spin mx-auto"/> : (isLoginMode ? "Se connecter" : "Continuer")}</Button>
         </div>
         <button onClick={onSwitchToLogin} className="mt-6 block w-full text-sm text-indigo-600 font-medium underline">
             {isLoginMode ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
@@ -124,7 +127,6 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [typingStatus, setTypingStatus] = useState("");
 
   useEffect(() => {
     const key = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
@@ -140,10 +142,6 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
     setInput('');
     setLoading(true);
 
-    const statuses = [`${psychic.name} canalise...`, "Analyse de vos vibrations...", "Rédaction de la vision..."];
-    let step = 0;
-    const interval = setInterval(() => { setTypingStatus(statuses[step % statuses.length]); step++; }, 1500);
-
     try {
       const response = await fetch(N8N_CHAT_WEBHOOK, {
         method: 'POST',
@@ -157,14 +155,23 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         })
       });
       const data = await response.json();
-      clearInterval(interval);
-      setMessages(prev => [...prev, { role: 'assistant', content: data.text || "La vision est trouble..." }]);
-    } catch (e) { setMessages(prev => [...prev, { role: 'assistant', content: "Erreur de connexion..." }]); }
-    finally { setLoading(false); setTypingStatus(""); }
+      
+      // Délai aléatoire pour simuler la rédaction humaine
+      const delay = Math.floor(Math.random() * (4000 - 2000 + 1)) + 2000;
+      
+      setTimeout(() => {
+        setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Je reçois une vibration floue, pouvez-vous reformuler ?" }]);
+        setLoading(false);
+      }, delay);
+      
+    } catch (e) { 
+        setMessages(prev => [...prev, { role: 'assistant', content: "La connexion est instable. Je dois me reconcentrer." }]);
+        setLoading(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none">
+    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none text-slate-900">
       <div className="flex items-center gap-4 py-3 px-4 border-b bg-white flex-shrink-0 z-10 shadow-sm">
         <button onClick={onGoBack} className="p-1.5 bg-slate-50 rounded-full"><ArrowLeft size={20}/></button>
         <div className="relative">
@@ -173,42 +180,64 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         </div>
         <div className="flex-1">
             <h3 className="font-bold text-sm leading-none">{psychic.name}</h3>
-            <p className="text-[9px] text-emerald-600 font-bold tracking-widest uppercase">Consultation Privée Active</p>
+            <p className="text-[9px] text-emerald-600 font-bold tracking-widest uppercase">Consultation Privée</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col-reverse bg-slate-50/30">
-        <div className="h-4 flex-shrink-0" />
-        {loading && <div className="flex justify-start mb-4"><div className="bg-white border p-4 rounded-2xl rounded-bl-none shadow-sm italic text-[11px] text-indigo-400 font-bold tracking-tighter uppercase">{typingStatus}</div></div>}
+      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col-reverse bg-[#fcfdff]">
+        <div className="h-10 flex-shrink-0" />
+        
+        {loading && (
+            <div className="flex justify-start mb-6">
+                <div className="bg-white border-2 border-indigo-50 p-4 rounded-2xl rounded-bl-none shadow-sm flex flex-col gap-2">
+                    <div className="flex gap-1.5">
+                        <div className="w-2 h-2 bg-indigo-300 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        <div className="w-2 h-2 bg-indigo-300 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                        <div className="w-2 h-2 bg-indigo-300 rounded-full animate-bounce"></div>
+                    </div>
+                </div>
+            </div>
+        )}
         
         {[...messages].reverse().map((m, i) => {
+          // Logique de flou pour TOUS les voyants après la première réponse
           const isBlurry = !isPremium && m.role === 'assistant' && messages.filter(msg => msg.role === 'user').length >= 1 && i === 0;
           
-          // --- LOGIQUE DE RÉVÉLATION PARTIELLE ---
-          const splitPoint = 65; 
+          const splitPoint = 60; 
           const visiblePart = isBlurry ? m.content.substring(0, splitPoint) : m.content;
           const blurryPart = isBlurry ? m.content.substring(splitPoint) : "";
 
           return (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 relative`}>
-              <div className={`max-w-[85%] p-4 rounded-2xl text-[16px] shadow-sm transition-all ${
+              <div className={`max-w-[88%] p-4 rounded-2xl text-[16px] shadow-sm leading-relaxed transition-all ${
                 m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'
               }`}>
                 {visiblePart}
-                {isBlurry && <span className="filter blur-md select-none opacity-40 inline-block ml-1">{blurryPart}</span>}
+                {isBlurry && (
+                    <span className="filter blur-[14px] select-none opacity-40 block mt-2 leading-[1.6]">
+                        {blurryPart || "Voici l'analyse complète que j'ai reçue pour vous. Les énergies indiquent un changement majeur qui va impacter votre situation très rapidement. Il est impératif d'anticiper cet événement pour ne pas être prise au dépourvu. Cette personne cache quelque chose."}
+                    </span>
+                )}
               </div>
 
               {isBlurry && (
-                <div className="absolute inset-0 flex flex-col items-center justify-end z-20 pb-2">
-                    <div className="bg-white/95 p-5 rounded-3xl shadow-2xl border border-indigo-100 text-center animate-in zoom-in-95 w-[90%] mx-auto">
-                        <Sparkles size={20} className="text-indigo-600 mx-auto mb-2 animate-pulse" />
-                        <p className="text-[12px] font-black text-indigo-900 leading-tight mb-3">
-                            Ma vision est complète.<br/>Découvrez ce que j'ai vu pour vous.
+                <div className="absolute inset-0 flex flex-col items-center justify-end z-20 pb-4">
+                    <div className="bg-white/95 p-6 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] border-2 border-indigo-50 text-center animate-in slide-in-from-bottom-10 w-[92%] mx-auto backdrop-blur-md">
+                        <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <Sparkles size={24} className="text-indigo-600 animate-pulse" />
+                        </div>
+                        <p className="text-[14px] font-black text-indigo-950 leading-tight mb-4 uppercase tracking-tight">
+                            L'analyse de {psychic.name} est prête.<br/>
+                            <span className="text-indigo-600">Découvrez votre vérité.</span>
                         </p>
-                        <button onClick={onAction} className="bg-indigo-600 text-white text-[11px] font-black px-6 py-3 rounded-full uppercase shadow-xl hover:bg-indigo-700 transition-all w-full">
+                        <button onClick={onAction} className="bg-indigo-600 text-white text-[13px] font-black px-8 py-4 rounded-full uppercase shadow-xl hover:bg-indigo-700 transition-all w-full mb-3">
                             RÉVÉLER MA RÉPONSE ({PRICE_TEXT})
                         </button>
-                        <p className="mt-3 text-[9px] text-slate-400 font-bold italic tracking-tight">Libellé bancaire discret : "Altéo Conseil"</p>
+                        <div className="space-y-1">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight flex items-center justify-center gap-1">
+                                <ShieldCheck size={12} className="text-emerald-500" /> Libellé discret : "Altéo Conseil"
+                            </p>
+                        </div>
                     </div>
                 </div>
               )}
@@ -218,15 +247,16 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       </div>
 
       {!( !isPremium && messages.filter(m => m.role === 'user').length >= 1 ) && (
-        <div className="p-3 border-t bg-white flex gap-2 flex-shrink-0">
-          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question ici..." className="flex-1 bg-slate-50 rounded-2xl px-4 py-3 text-[16px] outline-none border border-transparent focus:border-indigo-100" />
-          <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg active:scale-90 transition-transform"><Send size={20}/></button>
+        <div className="p-4 border-t bg-white flex gap-3 flex-shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question ici..." className="flex-1 bg-slate-50 rounded-2xl px-5 py-4 text-[16px] outline-none border-2 border-transparent focus:border-indigo-100 transition-all" />
+          <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-2xl shadow-lg active:scale-90 transition-transform"><Send size={24}/></button>
         </div>
       )}
     </div>
   );
 };
 
+// --- APP ---
 export default function App() {
   const [activeTab, setActiveTab] = useState('voyance'); 
   const [viewState, setViewState] = useState('list'); 
@@ -281,7 +311,7 @@ export default function App() {
       )}
 
       <nav className="bg-white border-b h-16 flex items-center justify-between px-4 sticky top-0 z-50">
-        <div className="font-serif font-bold text-xl text-indigo-900 flex items-center gap-2 cursor-pointer" onClick={() => {setViewState('list'); setSelectedPsychic(null); setSelectedSign(null);}}>
+        <div className="font-serif font-bold text-xl text-indigo-900 flex items-center gap-2 cursor-pointer" onClick={() => {setViewState('list'); setSelectedPsychic(null); setSelectedSign(null); setActiveTab('voyance');}}>
           <Moon className="text-indigo-600" size={24} fill="currentColor"/> AstroPure
         </div>
         {session ? (
@@ -324,14 +354,15 @@ export default function App() {
                 <div className="max-w-4xl mx-auto px-4 py-8">
                     <div className="text-center mb-10">
                         <h1 className="text-3xl font-serif font-black text-indigo-900 leading-tight">Consultation de Voyance Privée</h1>
-                        <p className="text-slate-500 text-sm mt-3 max-w-xs mx-auto">Recevez une guidance immédiate par chat privé avec nos experts.</p>
+                        <p className="text-slate-500 text-sm mt-3 max-w-xs mx-auto text-center font-medium">Réponse immédiate par chat sécurisé avec nos experts.</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-32">
                         {VOYANTES.map(p => (
                             <div key={p.id} onClick={() => setSelectedPsychic(p)} className="bg-white rounded-[2.5rem] p-6 text-center border shadow-xl shadow-slate-200/50 cursor-pointer hover:border-indigo-300 transition-all group relative">
                                 {p.isTop && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[9px] font-black px-4 py-1.5 rounded-full uppercase shadow-sm">Expert Recommandé</div>}
                                 <div className="absolute top-4 right-4 bg-emerald-100 text-emerald-600 text-[8px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1"><div className="w-1 h-1 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>
                                 <img src={p.image} className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md group-hover:scale-105 transition-transform" />
+                                
                                 <div className="flex flex-col items-center gap-1 mb-3">
                                   <div className="flex items-center justify-center gap-1">
                                       <div className="flex text-amber-500">
@@ -343,6 +374,7 @@ export default function App() {
                                       <Users size={12}/> <span>{p.reviews.toLocaleString()} consultations</span>
                                   </div>
                                 </div>
+
                                 <h3 className="font-bold text-xl text-indigo-900">{p.name}</h3>
                                 <p className="text-indigo-600 text-[10px] font-black uppercase mb-3 tracking-widest">{p.style}</p>
                                 <p className="text-xs text-slate-500 leading-relaxed mb-6 h-auto min-h-[48px] italic">"{p.desc}"</p>
@@ -350,12 +382,12 @@ export default function App() {
                             </div>
                         ))}
                     </div>
-                    <div className="mt-12 bg-white p-8 rounded-[2rem] border border-slate-100 text-center space-y-4">
-                        <div className="flex justify-center gap-8 opacity-40">
+                    <div className="mt-12 bg-white p-8 rounded-[2rem] border border-slate-100 text-center space-y-5">
+                        <div className="flex justify-center gap-8 opacity-60">
                           <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-4" alt="Visa" />
                           <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-4" alt="Mastercard" />
                         </div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Paiement Sécurisé & Débit Discret (Libellé : Altéo Conseil)</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">Paiement 100% Sécurisé & Discret - Débit "Altéo Conseil"</p>
                     </div>
                 </div>
             )
@@ -363,11 +395,11 @@ export default function App() {
         )}
       </main>
 
-      <div className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t h-20 flex items-center justify-around z-50 px-6 shadow-2xl">
-        <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(null); setSelectedSign(null); }} className={`flex flex-col items-center gap-1.5 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}>
+      <div className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-md border-t h-20 flex items-center justify-around z-50 px-6 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+        <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(null); setSelectedSign(null); setHoroscope(null); }} className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === 'voyance' ? 'text-indigo-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
           <MessageCircle size={24} fill={activeTab === 'voyance' ? "currentColor" : "none"}/><span className="text-[10px] uppercase font-black">Voyance</span>
         </button>
-        <button onClick={() => { setActiveTab('horoscope'); setSelectedSign(null); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1.5 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}>
+        <button onClick={() => { setActiveTab('horoscope'); setSelectedSign(null); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === 'horoscope' ? 'text-indigo-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
           <Moon size={24} fill={activeTab === 'horoscope' ? "currentColor" : "none"}/><span className="text-[10px] uppercase font-black">Horoscope</span>
         </button>
       </div>
