@@ -4,7 +4,8 @@ import { Helmet } from 'react-helmet';
 import ReactGA from "react-ga4";
 import { 
   Star, Moon, Lock, Check, Sparkles, ArrowLeft, X, LogOut, Loader2, 
-  MessageCircle, Send, ShieldCheck, Mail, CreditCard, Info, Heart, Users, Shield, Zap
+  MessageCircle, Send, ShieldCheck, Mail, CreditCard, Info, Heart, Users, Shield, Zap,
+  Home, Clover
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -295,15 +296,34 @@ export default function App() {
                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-50 shadow-xl space-y-8">
                   <h2 className="text-3xl font-serif font-black text-indigo-950 flex items-center gap-3">{selectedSign.icon} Horoscope {selectedSign.name}</h2>
                   <p className="text-slate-700 italic text-lg border-l-4 border-indigo-100 pl-6 py-2">"{horoscope?.intro || "Les astres révèlent une configuration rare..."}"</p>
-                  <div className="grid gap-8">
-                    <div className="bg-rose-50/30 p-6 rounded-3xl"><h3 className="font-black text-rose-600 text-xs uppercase mb-3 tracking-widest flex items-center gap-2"><Heart size={16}/> Cœur & Sentiments</h3><p className="text-[15px] text-slate-600">{horoscope?.love || "Stabilité à venir..."}</p></div>
-                    <div className="bg-emerald-50/30 p-6 rounded-3xl"><h3 className="font-black text-emerald-700 text-xs uppercase mb-3 tracking-widest flex items-center gap-2"><Sparkles size={16}/> Carrière & Projets</h3><p className="text-[15px] text-slate-600">{horoscope?.work || "Changements positifs..."}</p></div>
+                  
+                  <div className="grid gap-6">
+                    {/* Sections Gratuites */}
+                    <div className="bg-rose-50/30 p-6 rounded-3xl border border-rose-50/50"><h3 className="font-black text-rose-600 text-xs uppercase mb-3 tracking-widest flex items-center gap-2"><Heart size={16}/> Cœur & Sentiments</h3><p className="text-[15px] text-slate-600 leading-relaxed">{horoscope?.love || "Analyse en cours..."}</p></div>
+                    <div className="bg-emerald-50/30 p-6 rounded-3xl border border-emerald-50/50"><h3 className="font-black text-emerald-700 text-xs uppercase mb-3 tracking-widest flex items-center gap-2"><Sparkles size={16}/> Carrière & Projets</h3><p className="text-[15px] text-slate-600 leading-relaxed">{horoscope?.work || "Analyse en cours..."}</p></div>
+                    
+                    {/* Sections Premium */}
+                    {isPremium ? (
+                      <>
+                        <div className="bg-indigo-50/30 p-6 rounded-3xl border border-indigo-50/50 animate-in fade-in duration-500">
+                          <h3 className="font-black text-indigo-600 text-xs uppercase mb-3 tracking-widest flex items-center gap-2"><Home size={16}/> Famille & Foyer</h3>
+                          <p className="text-[15px] text-slate-600 leading-relaxed">{horoscope?.family || "Configuration astrale stable pour votre foyer."}</p>
+                        </div>
+                        <div className="bg-amber-50/30 p-6 rounded-3xl border border-amber-50/50 animate-in fade-in duration-700">
+                          <h3 className="font-black text-amber-700 text-xs uppercase mb-3 tracking-widest flex items-center gap-2"><Clover size={16}/> Chance & Opportunités</h3>
+                          <p className="text-[15px] text-slate-600 leading-relaxed">{horoscope?.luck || "Des opportunités inattendues se présentent cette semaine."}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="p-10 bg-indigo-950 text-white rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden group">
+                          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><Sparkles size={80}/></div>
+                          <Lock size={40} className="mx-auto mb-4 text-indigo-300"/>
+                          <h4 className="text-xl font-black mb-2 uppercase tracking-tight">Rapport Premium Verrouillé</h4>
+                          <p className="text-indigo-200 text-xs mb-8">Débloquez les sections <strong>Famille</strong> et <strong>Chance</strong>.</p>
+                          <Button onClick={handleAction} variant="secondary" className="w-full py-5 text-indigo-950 font-black">ACTIVER MON ACCÈS ({PRICE_TEXT})</Button>
+                      </div>
+                    )}
                   </div>
-                  {!isPremium && <div className="p-8 bg-indigo-950 text-white rounded-[2rem] text-center shadow-2xl relative">
-                      <Lock size={40} className="mx-auto mb-4 text-indigo-300"/>
-                      <h4 className="text-xl font-black mb-4 uppercase">Rapport Complet Verrouillé</h4>
-                      <Button onClick={handleAction} variant="secondary" className="w-full py-5 text-indigo-950">DÉBLOQUER ({PRICE_TEXT})</Button>
-                  </div>}
                 </div>
               </div>
             ) : (
@@ -382,6 +402,7 @@ export default function App() {
         <p><strong>Editeur :</strong> ALTEO CONSULTING</p>
         <p><strong>Adresse :</strong> 2 RUE NOTRE-DAME DES VICTOIRES, 75002 PARIS</p>
         <p><strong>SIRET :</strong> 99335347300016</p>
+        <p><strong>Capital :</strong> 5 000,00 €</p>
         <p><strong>Contact :</strong> {CONTACT_EMAIL}</p>
       </Modal>
 
