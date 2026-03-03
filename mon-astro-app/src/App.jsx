@@ -14,7 +14,6 @@ const STRIPE_LINK = "https://buy.stripe.com/6oUdR8gX08J0cbO2q0dAk00";
 const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook/chat-voyance";
 const CONTACT_EMAIL = "gestion@alteoconseil.fr";
 const PRICE_TEXT = "2,99€/mois";
-const FREE_CHAT_LIMIT = 2; 
 const GA_MEASUREMENT_ID = "G-V5V2VV84LG"; 
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -112,13 +111,10 @@ const AuthView = ({ onAuthSuccess, isLoginMode, onCancel, onSwitchToLogin }) => 
 };
 
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
-  // --- LOGIQUE DE SAUVEGARDE & CACHE ---
   const [messages, setMessages] = useState(() => {
-    const historyKey = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
-    const saved = localStorage.getItem(historyKey);
+    const key = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
+    const saved = localStorage.getItem(key);
     if (saved) return JSON.parse(saved);
-    
-    // Si connecté, on essaie de récupérer le cache de quand on était anonyme (transition fluide)
     if (session?.user?.id) {
         const anonSaved = localStorage.getItem(`astro_hist_${psychic.id}_anon`);
         if (anonSaved) return JSON.parse(anonSaved);
@@ -131,8 +127,8 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [typingStatus, setTypingStatus] = useState("");
 
   useEffect(() => {
-    const historyKey = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
-    localStorage.setItem(historyKey, JSON.stringify(messages));
+    const key = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
+    localStorage.setItem(key, JSON.stringify(messages));
   }, [messages, session, psychic.id]);
 
   const handleSend = async () => {
@@ -186,27 +182,33 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         {loading && <div className="flex justify-start mb-4"><div className="bg-white border p-4 rounded-2xl rounded-bl-none shadow-sm italic text-[11px] text-indigo-400 font-bold tracking-tighter uppercase">{typingStatus}</div></div>}
         
         {[...messages].reverse().map((m, i) => {
-          // FLOU MARKETING : Uniquement sur la dernière réponse si pas premium et au moins 1 question posée
           const isBlurry = !isPremium && m.role === 'assistant' && messages.filter(msg => msg.role === 'user').length >= 1 && i === 0;
+          
+          // --- LOGIQUE DE RÉVÉLATION PARTIELLE ---
+          const splitPoint = 65; 
+          const visiblePart = isBlurry ? m.content.substring(0, splitPoint) : m.content;
+          const blurryPart = isBlurry ? m.content.substring(splitPoint) : "";
+
           return (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 relative`}>
               <div className={`max-w-[85%] p-4 rounded-2xl text-[16px] shadow-sm transition-all ${
                 m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'
-              } ${isBlurry ? 'filter blur-lg opacity-40 select-none' : ''}`}>
-                {m.content}
+              }`}>
+                {visiblePart}
+                {isBlurry && <span className="filter blur-md select-none opacity-40 inline-block ml-1">{blurryPart}</span>}
               </div>
 
               {isBlurry && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
-                    <div className="bg-white/95 p-5 rounded-3xl shadow-2xl border border-indigo-100 text-center animate-in zoom-in-95">
-                        <Sparkles size={24} className="text-indigo-600 mx-auto mb-2 animate-pulse" />
-                        <p className="text-[13px] font-black text-indigo-900 leading-tight mb-4">
-                            {psychic.name} a répondu à votre question.<br/>Découvrez votre vérité maintenant.<br/>Discutez en illimité.
+                <div className="absolute inset-0 flex flex-col items-center justify-end z-20 pb-2">
+                    <div className="bg-white/95 p-5 rounded-3xl shadow-2xl border border-indigo-100 text-center animate-in zoom-in-95 w-[90%] mx-auto">
+                        <Sparkles size={20} className="text-indigo-600 mx-auto mb-2 animate-pulse" />
+                        <p className="text-[12px] font-black text-indigo-900 leading-tight mb-3">
+                            Ma vision est complète.<br/>Découvrez ce que j'ai vu pour vous.
                         </p>
-                        <button onClick={onAction} className="bg-indigo-600 text-white text-[12px] font-black px-6 py-3 rounded-full uppercase shadow-xl hover:bg-indigo-700 transition-all">
-                            VOIR MA RÉPONSE ({PRICE_TEXT})
+                        <button onClick={onAction} className="bg-indigo-600 text-white text-[11px] font-black px-6 py-3 rounded-full uppercase shadow-xl hover:bg-indigo-700 transition-all w-full">
+                            RÉVÉLER MA RÉPONSE ({PRICE_TEXT})
                         </button>
-                        <p className="mt-3 text-[10px] text-slate-400 font-bold italic tracking-tight">Libellé bancaire discret : "Altéo Conseil"</p>
+                        <p className="mt-3 text-[9px] text-slate-400 font-bold italic tracking-tight">Libellé bancaire discret : "Altéo Conseil"</p>
                     </div>
                 </div>
               )}
@@ -330,7 +332,6 @@ export default function App() {
                                 {p.isTop && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[9px] font-black px-4 py-1.5 rounded-full uppercase shadow-sm">Expert Recommandé</div>}
                                 <div className="absolute top-4 right-4 bg-emerald-100 text-emerald-600 text-[8px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1"><div className="w-1 h-1 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>
                                 <img src={p.image} className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md group-hover:scale-105 transition-transform" />
-                                
                                 <div className="flex flex-col items-center gap-1 mb-3">
                                   <div className="flex items-center justify-center gap-1">
                                       <div className="flex text-amber-500">
@@ -342,7 +343,6 @@ export default function App() {
                                       <Users size={12}/> <span>{p.reviews.toLocaleString()} consultations</span>
                                   </div>
                                 </div>
-
                                 <h3 className="font-bold text-xl text-indigo-900">{p.name}</h3>
                                 <p className="text-indigo-600 text-[10px] font-black uppercase mb-3 tracking-widest">{p.style}</p>
                                 <p className="text-xs text-slate-500 leading-relaxed mb-6 h-auto min-h-[48px] italic">"{p.desc}"</p>
