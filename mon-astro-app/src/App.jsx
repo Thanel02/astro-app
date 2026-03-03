@@ -64,11 +64,12 @@ const VOYANTES = [
 
 // --- COMPOSANTS UI ---
 const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }) => {
-  const baseStyle = "px-6 py-4 rounded-full font-bold transition-all duration-300 transform active:scale-95 shadow-md flex items-center justify-center text-base";
+  const baseStyle = "px-6 py-4 rounded-full font-bold transition-all duration-300 transform active:scale-95 shadow-md flex items-center justify-center text-base cursor-pointer";
   const variants = { 
     primary: "bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-slate-300", 
     secondary: "bg-white text-indigo-900 border border-indigo-100",
-    danger: "bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100"
+    danger: "bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100",
+    amber: "bg-gradient-to-b from-amber-400 to-amber-600 text-white border-t border-amber-300 shadow-[0_4px_0_0_#b45309]"
   };
   return <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>{children}</button>;
 };
@@ -141,6 +142,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     const key = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
@@ -172,8 +174,11 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
     }
   };
 
+  const showPaywall = !isPremium && messages.filter(m => m.role === 'user').length >= 1;
+
   return (
     <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none text-slate-900 font-sans">
+      {/* Header */}
       <div className="flex items-center gap-4 py-4 px-5 border-b bg-white/80 backdrop-blur-md sticky top-0 z-20">
         <button onClick={onGoBack} className="p-2 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors"><ArrowLeft size={20}/></button>
         <div className="relative">
@@ -186,71 +191,74 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col-reverse bg-slate-50/50">
-        <div className="h-12 flex-shrink-0" />
-        
-        {loading && (
-            <div className="flex justify-start mb-6">
-                <div className="bg-white border border-slate-100 p-5 rounded-3xl rounded-bl-none shadow-sm flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                    <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                    <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce"></div>
-                </div>
-            </div>
-        )}
-        
-        {[...messages].reverse().map((m, i) => {
-          const isBlurry = !isPremium && m.role === 'assistant' && messages.filter(msg => msg.role === 'user').length >= 1 && i === 0;
-          const splitPoint = 60; 
-          const visiblePart = isBlurry ? m.content.substring(0, splitPoint) : m.content;
-          const blurryPart = isBlurry ? m.content.substring(splitPoint) : "";
-
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 bg-slate-50/50 flex flex-col gap-6">
+        {messages.map((m, i) => {
+          const isLastAssistantMsg = m.role === 'assistant' && i === messages.length - 1;
+          const isBlured = showPaywall && isLastAssistantMsg;
+          
           return (
-            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-6 relative`}>
-              <div className={`max-w-[92%] p-5 rounded-[1.75rem] text-[16px] leading-relaxed shadow-sm transition-all ${
+            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[85%] p-5 rounded-[1.75rem] text-[16px] leading-relaxed shadow-sm ${
                 m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'
-              }`}>
-                {visiblePart}
-                {isBlurry && (
-                    <div className="relative mt-2">
-                        <span className="filter blur-[20px] opacity-25 select-none block leading-7">
-                            {blurryPart || "Voici l'analyse complète que j'ai reçue pour vous. Les énergies indiquent un changement majeur qui va impacter votre situation très rapidement."}
-                        </span>
-                        
-                        <div className="absolute inset-x-0 -bottom-2 pt-14 pb-2 flex flex-col items-center justify-end z-20">
-                            <div className="bg-white/98 p-8 rounded-[3rem] shadow-[0_20px_60px_rgba(0,0,0,0.25)] border border-slate-100 text-center animate-in slide-in-from-bottom-12 w-full backdrop-blur-xl">
-                                <p className="text-[17px] font-black text-indigo-950 leading-tight mb-8">
-                                    Ma vision est complète.<br/>
-                                    <span className="text-amber-600 uppercase text-xs tracking-widest">Accédez à votre vérité</span>
-                                </p>
-
-                                <button 
-                                    onClick={onAction} 
-                                    className="relative w-full bg-gradient-to-b from-amber-400 to-amber-600 text-white text-[18px] font-black py-6 rounded-2xl flex items-center justify-center gap-1.5 transition-all transform hover:scale-[1.02] active:translate-y-1 border-t border-amber-300 shadow-[0_8px_0_0_#b45309,0_15px_30px_rgba(0,0,0,0.3)]"
-                                >
-                                    RÉVÉLER MA RÉPONSE 
-                                    <span className="text-[13px] font-bold opacity-90 ml-1">({PRICE_TEXT})</span>
-                                </button>
-
-                                <div className="space-y-3 mt-10">
-                                    <p className="text-[11px] text-slate-600 font-black uppercase tracking-widest flex items-center justify-center gap-2">
-                                        <ShieldCheck size={16} className="text-emerald-500" /> Libellé discret : "Altéo Conseil"
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+              } ${isBlured ? 'overflow-hidden max-h-32' : ''}`}>
+                {isBlured ? (
+                  <div className="relative">
+                    <p className="blur-[8px] select-none opacity-50">
+                      {m.content.substring(0, 100)}... Voici l'analyse complète que j'ai reçue pour vous. Les énergies indiquent un changement majeur qui va impacter votre situation très rapidement.
+                    </p>
+                  </div>
+                ) : m.content}
               </div>
             </div>
           );
         })}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-white border border-slate-100 p-5 rounded-3xl rounded-bl-none shadow-sm flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+              <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+              <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce"></div>
+            </div>
+          </div>
+        )}
+        <div ref={scrollRef} />
       </div>
 
-      {!( !isPremium && messages.filter(m => m.role === 'user').length >= 1 ) && (
+      {/* Paywall Card - Positionnée au-dessus de l'input */}
+      {showPaywall && (
+        <div className="px-4 py-6 bg-white border-t animate-in slide-in-from-bottom-full duration-500 z-30 shadow-[0_-20px_40px_rgba(0,0,0,0.1)]">
+          <div className="max-w-md mx-auto text-center space-y-6">
+            <div className="inline-flex p-3 bg-amber-50 rounded-full text-amber-600 mb-2">
+              <Sparkles size={24}/>
+            </div>
+            <h4 className="text-xl font-black text-indigo-950">Ma vision est prête pour vous</h4>
+            <p className="text-sm text-slate-500">Accédez à votre réponse complète et posez toutes vos questions en illimité.</p>
+            
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                onAction();
+              }}
+              className="w-full bg-gradient-to-b from-amber-400 to-amber-600 text-white py-5 rounded-2xl font-black text-lg shadow-[0_6px_0_0_#b45309] active:translate-y-1 transition-all flex flex-col items-center justify-center cursor-pointer"
+            >
+              RÉVÉLER MA RÉPONSE
+              <span className="text-[11px] opacity-90 font-bold uppercase tracking-widest mt-0.5">({PRICE_TEXT})</span>
+            </button>
+            
+            <div className="flex items-center justify-center gap-4 text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+              <span className="flex items-center gap-1"><ShieldCheck size={12} className="text-emerald-500"/> Discrétion assurée</span>
+              <span className="flex items-center gap-1"><Check size={12} className="text-emerald-500"/> Sans engagement</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Input Field */}
+      {!showPaywall && (
         <div className="p-4 border-t bg-white flex gap-3 flex-shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] pb-10 md:pb-4">
           <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question ici..." className="flex-1 bg-slate-50 rounded-2xl px-6 py-4 text-[16px] outline-none border-2 border-transparent focus:border-indigo-100 transition-all shadow-inner" />
-          <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-2xl shadow-lg transition-transform active:scale-90"><Send size={24}/></button>
+          <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-2xl shadow-lg active:scale-90 transition-transform"><Send size={24}/></button>
         </div>
       )}
     </div>
@@ -268,7 +276,7 @@ export default function App() {
   const [horoscope, setHoroscope] = useState(null);
   
   // Modales
-  const [modalType, setModalType] = useState(null); // 'cgv', 'privacy', 'account'
+  const [modalType, setModalType] = useState(null);
 
   useEffect(() => {
     if (!supabase) return;
@@ -297,9 +305,14 @@ export default function App() {
   }, [selectedSign]);
 
   const handleAction = () => {
+    console.log("Action paywall déclenchée");
     ReactGA.event({ category: "Conversion", action: "Click Payment Button", label: selectedPsychic?.name || "General" });
-    if (!session) setViewState('auth');
-    else window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
+    if (!session) {
+        setViewState('auth');
+    } else {
+        const stripeUrl = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
+        window.location.href = stripeUrl;
+    }
   };
 
   return (
@@ -368,7 +381,7 @@ export default function App() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                         {VOYANTES.map(p => (
-                            <div key={p.id} onClick={() => setSelectedPsychic(p)} className="bg-white rounded-[3rem] p-8 text-center border border-slate-100 shadow-xl hover:border-indigo-200 transition-all group relative">
+                            <div key={p.id} onClick={() => setSelectedPsychic(p)} className="bg-white rounded-[3rem] p-8 text-center border border-slate-100 shadow-xl hover:border-indigo-200 transition-all group relative cursor-pointer">
                                 {p.isTop && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[10px] font-black px-6 py-2 rounded-full uppercase shadow-lg whitespace-nowrap">Expert Recommandé</div>}
                                 <div className="absolute top-6 right-8 bg-emerald-100 text-emerald-600 text-[8px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>
                                 <img src={p.image} className="w-32 h-32 rounded-full object-cover mx-auto mb-6 border-4 border-white shadow-xl group-hover:scale-105 transition-transform" />
@@ -389,18 +402,6 @@ export default function App() {
                                 <button className="hover:text-indigo-600 transition-colors uppercase">Mentions Légales</button>
                             </div>
                         </div>
-
-                        <div className="bg-indigo-50/30 p-8 rounded-[2rem] border border-indigo-100/50">
-                            <div className="flex items-start gap-4">
-                                <Info className="text-indigo-400 shrink-0 mt-1" size={20} />
-                                <div className="space-y-3">
-                                    <h5 className="font-black text-indigo-950 text-sm uppercase tracking-tight">Support & Résiliation</h5>
-                                    <p className="text-xs text-slate-600 leading-relaxed">
-                                        Service sans engagement à {PRICE_TEXT}. Résiliation par simple email à <strong>{CONTACT_EMAIL}</strong>.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             )
@@ -418,70 +419,26 @@ export default function App() {
         </button>
       </div>
 
-      {/* --- MODALES LÉGALES & COMPTE --- */}
-      <Modal 
-        isOpen={modalType === 'cgv'} 
-        onClose={() => setModalType(null)} 
-        title="Conditions Générales de Vente"
-      >
+      {/* --- MODALES --- */}
+      <Modal isOpen={modalType === 'cgv'} onClose={() => setModalType(null)} title="Conditions Générales de Vente">
         <h4 className="font-bold text-indigo-950">1. Objet du service</h4>
-        <p>AstroPure propose un service de divertissement lié aux arts divinatoires et à l'astrologie via une interface de chat assistée par intelligence artificielle.</p>
-        <h4 className="font-bold text-indigo-950">2. Abonnement et Prix</h4>
-        <p>L'accès illimité est proposé au tarif de {PRICE_TEXT}. L'abonnement est reconduit tacitement chaque mois sauf dénonciation.</p>
-        <h4 className="font-bold text-indigo-950">3. Résiliation</h4>
-        <p>L'utilisateur peut résilier à tout moment sans frais en envoyant un email à {CONTACT_EMAIL}. La résiliation sera effective à la fin de la période en cours.</p>
-        <h4 className="font-bold text-indigo-950">4. Responsabilité</h4>
-        <p>Les réponses fournies sont à caractère purement divertissant. Elles ne constituent en aucun cas des conseils médicaux, juridiques ou financiers.</p>
+        <p>AstroPure propose un service de divertissement lié aux arts divinatoires via IA.</p>
+        <h4 className="font-bold text-indigo-950">2. Abonnement</h4>
+        <p>Tarif : {PRICE_TEXT}. Résiliation par email à {CONTACT_EMAIL}.</p>
       </Modal>
 
-      <Modal 
-        isOpen={modalType === 'privacy'} 
-        onClose={() => setModalType(null)} 
-        title="Politique de Confidentialité"
-      >
-        <p>Nous accordons une importance capitale à la protection de vos données privées.</p>
-        <h4 className="font-bold text-indigo-950">Données collectées</h4>
-        <p>Nous collectons votre email pour la gestion de votre compte et l'historique de vos conversations pour assurer la continuité du service.</p>
-        <h4 className="font-bold text-indigo-950">Sécurité</h4>
-        <p>Toutes les conversations sont privées et ne sont jamais partagées avec des tiers. Vos données de paiement sont gérées exclusivement par Stripe via un protocole sécurisé (SSL).</p>
+      <Modal isOpen={modalType === 'privacy'} onClose={() => setModalType(null)} title="Politique de Confidentialité">
+        <p>Nous collectons votre email pour gérer votre abonnement. Vos données ne sont jamais revendues.</p>
       </Modal>
 
-      <Modal 
-        isOpen={modalType === 'account'} 
-        onClose={() => setModalType(null)} 
-        title="Mon Compte Premium"
-      >
+      <Modal isOpen={modalType === 'account'} onClose={() => setModalType(null)} title="Mon Compte Premium">
         <div className="space-y-6">
             <div className="bg-indigo-50 p-6 rounded-3xl flex items-center justify-between">
-                <div>
-                    <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">Statut</p>
-                    <p className="text-indigo-950 font-black text-lg">Abonnement Actif</p>
-                </div>
+                <div><p className="text-[10px] font-black uppercase text-indigo-400">Statut</p><p className="text-indigo-950 font-black text-lg">Abonnement Actif</p></div>
                 <div className="bg-emerald-500 text-white p-2 rounded-full"><Check size={20}/></div>
             </div>
-            
-            <div className="space-y-4">
-                <div className="flex items-center gap-4 text-slate-700">
-                    <Mail size={18} className="text-indigo-400" />
-                    <span>{session?.user?.email}</span>
-                </div>
-                <div className="flex items-center gap-4 text-slate-700">
-                    <CreditCard size={18} className="text-indigo-400" />
-                    <span>{PRICE_TEXT} / mois (Stripe)</span>
-                </div>
-            </div>
-
-            <div className="pt-6 border-t border-slate-100">
-                <h4 className="font-black text-indigo-950 text-xs uppercase mb-4">Gestion de l'abonnement</h4>
-                <p className="text-xs text-slate-500 mb-4">Pour modifier vos informations de paiement ou résilier votre abonnement, contactez notre support client.</p>
-                <Button 
-                    variant="danger" 
-                    className="w-full text-sm" 
-                    onClick={() => window.location.href = `mailto:${CONTACT_EMAIL}?subject=Demande de résiliation - ${session?.user?.email}`}
-                >
-                    Résilier mon abonnement
-                </Button>
-            </div>
+            <p className="text-sm text-slate-600">Email : {session?.user?.email}</p>
+            <Button variant="danger" className="w-full text-sm" onClick={() => window.location.href = `mailto:${CONTACT_EMAIL}?subject=Resiliation - ${session?.user?.email}`}>Résilier mon abonnement</Button>
         </div>
       </Modal>
 
