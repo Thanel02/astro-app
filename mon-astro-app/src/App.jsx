@@ -78,7 +78,7 @@ const AuthView = ({ onAuthSuccess, isLoginMode, onCancel, onSwitchToLogin }) => 
 
   const handleAuth = async () => {
     setLoading(true);
-    // --- TAG GA4 : DEMARRAGE INSCRIPTION/CONNEXION ---
+    // --- TAG GA4 : DÉMARRAGE INSCRIPTION OU CONNEXION ---
     ReactGA.event({ category: "Conversion", action: isLoginMode ? "Login_Attempt" : "Sign_Up_Start" });
 
     try {
@@ -100,7 +100,7 @@ const AuthView = ({ onAuthSuccess, isLoginMode, onCancel, onSwitchToLogin }) => 
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400"><X size={20}/></button>
         <div className="mb-6 inline-flex p-3 bg-indigo-50 rounded-full text-indigo-600"><Lock size={24}/></div>
         <h2 className="text-2xl font-bold font-serif text-indigo-900">{isLoginMode ? 'Connexion' : 'Accéder à ma réponse'}</h2>
-        <p className="text-xs text-slate-500 mt-2 mb-6">{isLoginMode ? 'Identifiez-vous pour continuer votre chat.' : 'Créez votre accès pour découvrir ce que la voyante a révélé.'}</p>
+        <p className="text-xs text-slate-500 mt-2 mb-6">{isLoginMode ? 'Identifiez-vous pour continuer.' : 'Créez votre accès pour découvrir votre vérité.'}</p>
         <div className="space-y-4">
           <input type="email" placeholder="Votre email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none text-[16px]"/>
           <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border outline-none text-[16px]"/>
@@ -162,7 +162,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none">
+    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none text-slate-900">
       <div className="flex items-center gap-4 py-3 px-4 border-b bg-white flex-shrink-0 z-10 shadow-sm">
         <button onClick={onGoBack} className="p-1.5 bg-slate-50 rounded-full"><ArrowLeft size={20}/></button>
         <div className="relative">
@@ -171,7 +171,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         </div>
         <div className="flex-1">
             <h3 className="font-bold text-sm leading-none">{psychic.name}</h3>
-            <p className="text-[9px] text-emerald-600 font-bold uppercase">Consultation Privée</p>
+            <p className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest">Consultation Privée</p>
         </div>
       </div>
 
@@ -198,31 +198,45 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
           return (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 relative`}>
-              <div className={`max-w-[88%] p-4 rounded-2xl text-[16px] shadow-sm leading-relaxed ${
+              <div className={`max-w-[88%] p-4 rounded-2xl text-[16px] shadow-sm leading-relaxed transition-all ${
                 m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'
               }`}>
                 {visiblePart}
                 {isBlurry && (
-                    <span className="filter blur-[14px] select-none opacity-40 block mt-2 leading-[1.6]">
-                        {blurryPart || "Les énergies indiquent un changement majeur qui va impacter votre situation très rapidement. Il est impératif d'anticiper cet événement."}
+                    <span className="filter blur-[15px] select-none opacity-40 block mt-2 leading-[1.6]">
+                        {blurryPart || "Voici l'analyse complète que j'ai reçue pour vous. Les énergies indiquent un changement majeur qui va impacter votre situation très rapidement. Il est impératif d'anticiper cet événement pour ne pas être surprise."}
                     </span>
                 )}
               </div>
 
               {isBlurry && (
-                <div className="absolute inset-0 flex flex-col items-center justify-end z-20 pb-4">
-                    <div className="bg-white/95 p-6 rounded-[2rem] shadow-2xl border-2 border-indigo-50 text-center animate-in slide-in-from-bottom-10 w-[92%] mx-auto backdrop-blur-md">
-                        <Sparkles size={24} className="text-indigo-600 mx-auto mb-3 animate-pulse" />
-                        <p className="text-[14px] font-black text-indigo-950 leading-tight mb-4 uppercase tracking-tight">
-                            L'analyse est prête.<br/><span className="text-indigo-600">Découvrez votre vérité.</span>
-                        </p>
-                        <button onClick={onAction} className="bg-indigo-600 text-white text-[13px] font-black px-8 py-4 rounded-full uppercase shadow-xl hover:bg-indigo-700 w-full mb-2">
-                            RÉVÉLER MA RÉPONSE ({PRICE_TEXT})
-                        </button>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight flex items-center justify-center gap-1">
-                            <ShieldCheck size={12} className="text-emerald-500" /> Libellé discret : "Altéo Conseil"
-                        </p>
+                <div className="absolute inset-0 flex flex-col items-center justify-end z-20 pb-4 px-2">
+                  <div className="bg-white p-7 rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.3)] border-2 border-amber-100 text-center animate-in slide-in-from-bottom-12 w-full max-w-[95%] mx-auto backdrop-blur-md">
+                    <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Sparkles size={28} className="text-amber-600 animate-pulse" />
                     </div>
+                    
+                    <p className="text-[16px] font-black text-slate-900 leading-tight mb-5 uppercase tracking-tight">
+                      Analyse terminée.<br/>
+                      <span className="text-amber-600">Découvrez votre vérité.</span>
+                    </p>
+
+                    <button 
+                      onClick={onAction} 
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-white text-[15px] font-black py-5 rounded-2xl shadow-[0_10px_20px_rgba(245,158,11,0.3)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3"
+                    >
+                      <Eye size={20} />
+                      DÉBLOQUER MA RÉPONSE ({PRICE_TEXT})
+                    </button>
+
+                    <div className="mt-4 pt-4 border-t border-slate-50">
+                      <p className="text-[11px] text-slate-500 font-bold uppercase tracking-tight flex items-center justify-center gap-2">
+                        <ShieldCheck size={14} className="text-emerald-500" /> 
+                        Paiement discret : "Altéo Conseil"
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1 italic">Accès immédiat et sécurisé</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -232,8 +246,8 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
       {!( !isPremium && messages.filter(m => m.role === 'user').length >= 1 ) && (
         <div className="p-4 border-t bg-white flex gap-3 flex-shrink-0 shadow-sm">
-          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question..." className="flex-1 bg-slate-50 rounded-2xl px-5 py-4 text-[16px] outline-none border-2 border-transparent focus:border-indigo-100 transition-all" />
-          <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-2xl shadow-lg"><Send size={24}/></button>
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question..." className="flex-1 bg-slate-50 rounded-2xl px-5 py-4 text-[16px] outline-none border-2 border-transparent focus:border-indigo-100" />
+          <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-2xl shadow-lg transition-transform active:scale-90"><Send size={24}/></button>
         </div>
       )}
     </div>
@@ -280,7 +294,7 @@ export default function App() {
   }, [selectedSign]);
 
   const handleAction = () => {
-    // --- TAG GA4 : CLIC BOUTON PAIEMENT DANS LE CHAT ---
+    // --- TAG GA4 : CLIC SUR LE BOUTON D'ACTION ---
     ReactGA.event({ category: "Conversion", action: "Click Payment Button", label: selectedPsychic?.name || "General" });
     
     if (!session) setViewState('auth');
@@ -304,7 +318,7 @@ export default function App() {
         {session ? (
             <button onClick={() => supabase.auth.signOut()} className="text-slate-400"><LogOut size={20}/></button>
         ) : (
-            <button onClick={() => {setIsLoginMode(true); setViewState('auth');}} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full uppercase border border-indigo-100">Accès Client</button>
+            <button onClick={() => {setIsLoginMode(true); setViewState('auth');}} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full uppercase border border-indigo-100 tracking-tight">Accès Client</button>
         )}
       </nav>
 
@@ -323,7 +337,7 @@ export default function App() {
                       <div className="bg-rose-50/50 p-4 rounded-2xl"><h3 className="font-bold text-rose-600 border-b border-rose-100 text-[10px] uppercase mb-2">Cœur & Sentiments</h3><p className="text-sm text-slate-600">{horoscope?.love || "Stabilité à venir..."}</p></div>
                       <div className="bg-emerald-50/50 p-4 rounded-2xl"><h3 className="font-bold text-emerald-700 border-b border-emerald-100 text-[10px] uppercase mb-2">Carrière & Projets</h3><p className="text-sm text-slate-600">{horoscope?.work || "Changements positifs..."}</p></div>
                     </div>
-                    {!isPremium && <div className="p-6 bg-indigo-900 text-white rounded-3xl text-center shadow-xl"><Lock size={32} className="mx-auto mb-3 text-indigo-300"/><h4 className="font-bold mb-1">Rapport Complet Verrouillé</h4><Button onClick={handleAction} variant="secondary" className="w-full text-indigo-900 font-bold">DÉBLOQUER POUR {PRICE_TEXT}</Button></div>}
+                    {!isPremium && <div className="p-6 bg-indigo-900 text-white rounded-3xl text-center shadow-xl"><Lock size={32} className="mx-auto mb-3 text-indigo-300"/><h4 className="font-bold mb-1 uppercase tracking-tight">Rapport Complet Verrouillé</h4><Button onClick={handleAction} variant="secondary" className="w-full text-indigo-900 font-bold">DÉBLOQUER POUR {PRICE_TEXT}</Button></div>}
                   </div>
                 </div>
               ) : (
@@ -339,13 +353,14 @@ export default function App() {
                 <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={handleAction} session={session} />
             ) : (
                 <div className="max-w-4xl mx-auto px-4 py-8">
-                    <div className="text-center mb-10">
+                    <div className="text-center mb-10 px-4">
                         <h1 className="text-3xl font-serif font-black text-indigo-900 leading-tight">Consultation de Voyance Privée</h1>
                         <p className="text-slate-500 text-sm mt-3 max-w-xs mx-auto text-center font-medium">Réponse immédiate par chat sécurisé avec nos experts.</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {VOYANTES.map(p => (
                             <div key={p.id} onClick={() => setSelectedPsychic(p)} className="bg-white rounded-[2.5rem] p-6 text-center border shadow-xl cursor-pointer hover:border-indigo-300 transition-all group relative">
+                                {p.isTop && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[9px] font-black px-4 py-1.5 rounded-full uppercase shadow-sm">Expert Recommandé</div>}
                                 <div className="absolute top-4 right-4 bg-emerald-100 text-emerald-600 text-[8px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1"><div className="w-1 h-1 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>
                                 <img src={p.image} className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md" />
                                 <div className="flex flex-col items-center gap-1 mb-3">
@@ -375,7 +390,7 @@ export default function App() {
         )}
       </main>
 
-      <div className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t h-20 flex items-center justify-around z-50 px-6 shadow-2xl">
+      <div className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-md border-t h-20 flex items-center justify-around z-50 px-6 shadow-2xl">
         <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(null); setSelectedSign(null); }} className={`flex flex-col items-center gap-1.5 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}>
           <MessageCircle size={24} fill={activeTab === 'voyance' ? "currentColor" : "none"}/><span className="text-[10px] uppercase font-black">Voyance</span>
         </button>
