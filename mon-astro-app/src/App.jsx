@@ -6,7 +6,7 @@ import {
   Star, Moon, Sun, Lock, ChevronRight, User, Check, Sparkles, 
   ArrowLeft, Menu, X, LogOut, Loader2, MessageCircle, Send,
   Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Clock, ShieldCheck, Mail, Key, Settings,
-  ThumbsUp, Users, Shield, Heart, Eye
+  ThumbsUp, Users, Shield, Heart, Eye, Zap
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -143,7 +143,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         body: JSON.stringify({ message: userMsg, voyanteId: psychic.id, userId: session?.user?.id || 'anonymous', isPremium, history: messages.slice(-5)})
       });
       const data = await response.json();
-      const delay = Math.floor(Math.random() * (4000 - 2000 + 1)) + 2000;
+      const delay = Math.floor(Math.random() * (3500 - 2000 + 1)) + 2000;
       setTimeout(() => {
         setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Je reçois une vibration floue..." }]);
         setLoading(false);
@@ -156,7 +156,6 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
   return (
     <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none text-slate-900">
-      {/* HEADER PREMIUM */}
       <div className="flex items-center gap-4 py-4 px-5 border-b bg-white/80 backdrop-blur-md sticky top-0 z-20">
         <button onClick={onGoBack} className="p-2 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors"><ArrowLeft size={20}/></button>
         <div className="relative">
@@ -176,9 +175,9 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
             <div className="flex justify-start mb-6">
                 <div className="bg-white border border-slate-100 p-5 rounded-3xl rounded-bl-none shadow-sm">
                     <div className="flex gap-1.5">
-                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
+                        <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                        <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce"></div>
                     </div>
                 </div>
             </div>
@@ -186,7 +185,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         
         {[...messages].reverse().map((m, i) => {
           const isBlurry = !isPremium && m.role === 'assistant' && messages.filter(msg => msg.role === 'user').length >= 1 && i === 0;
-          const splitPoint = 65; 
+          const splitPoint = 60; 
           const visiblePart = isBlurry ? m.content.substring(0, splitPoint) : m.content;
           const blurryPart = isBlurry ? m.content.substring(splitPoint) : "";
 
@@ -198,35 +197,35 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
                 {visiblePart}
                 {isBlurry && (
                     <div className="relative mt-2">
-                        <span className="filter blur-[16px] opacity-30 select-none block leading-7">
-                            {blurryPart || "Voici l'analyse complète que j'ai reçue pour vous. Les énergies indiquent un changement majeur qui va impacter votre situation très rapidement. Il est impératif d'anticiper cet événement pour ne pas être surprise. Cette personne cache quelque chose qui sera révélé."}
+                        <span className="filter blur-[18px] opacity-25 select-none block leading-7">
+                            {blurryPart || "Voici l'analyse complète que j'ai reçue pour vous. Les énergies indiquent un changement majeur qui va impacter votre situation très rapidement. Il est impératif d'anticiper cet événement pour ne pas être surprise. Cette personne cache quelque chose qui sera révélé bientôt."}
                         </span>
                         
-                        {/* PAYWALL OVERLAY */}
-                        <div className="absolute inset-x-0 -bottom-2 pt-12 pb-2 flex flex-col items-center justify-end z-20">
-                            <div className="bg-white/95 p-8 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.25)] border-2 border-amber-50 text-center animate-in slide-in-from-bottom-12 w-full backdrop-blur-md">
-                                <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-5">
+                        {/* PAYWALL OVERLAY - BOUTON PRESTIGE OR */}
+                        <div className="absolute inset-x-0 -bottom-2 pt-14 pb-2 flex flex-col items-center justify-end z-20">
+                            <div className="bg-white p-8 rounded-[3rem] shadow-[0_30px_70px_rgba(0,0,0,0.3)] border border-amber-100 text-center animate-in slide-in-from-bottom-12 w-full backdrop-blur-xl">
+                                <div className="w-16 h-16 bg-gradient-to-tr from-amber-100 to-amber-50 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
                                     <Sparkles size={32} className="text-amber-500 animate-pulse" />
                                 </div>
                                 
-                                <p className="text-[17px] font-black text-indigo-950 leading-tight mb-6">
-                                    Analyse terminée.<br/>
-                                    <span className="text-amber-600">Découvrez votre vérité.</span>
+                                <p className="text-[18px] font-black text-indigo-950 leading-tight mb-6">
+                                    Ma vision est complète.<br/>
+                                    <span className="text-amber-600">Voulez-vous savoir la vérité ?</span>
                                 </p>
 
                                 <button 
                                     onClick={onAction} 
-                                    className="w-full bg-amber-500 hover:bg-amber-600 text-white text-[15px] font-black py-5 rounded-2xl shadow-[0_10px_25px_rgba(245,158,11,0.35)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3 mb-4"
+                                    className="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white text-[17px] font-black py-6 rounded-2xl shadow-[0_15px_35px_rgba(245,158,11,0.4)] transition-all transform hover:scale-[1.03] active:scale-95 flex items-center justify-center gap-3 mb-5 border-b-4 border-amber-700 animate-bounce-subtle"
                                 >
-                                    <Eye size={22} />
-                                    VOIR MA RÉPONSE ({PRICE_TEXT})
+                                    <Zap size={22} fill="currentColor" />
+                                    DÉCOUVRIR MA RÉPONSE ({PRICE_TEXT})
                                 </button>
 
-                                <div className="space-y-1.5">
-                                    <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wide flex items-center justify-center gap-2">
-                                        <ShieldCheck size={14} className="text-emerald-500" /> Libellé discret : "Altéo Conseil"
+                                <div className="space-y-2">
+                                    <p className="text-[11px] text-slate-600 font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                                        <ShieldCheck size={16} className="text-emerald-500" /> Libellé discret : "Altéo Conseil"
                                     </p>
-                                    <p className="text-[10px] text-slate-400">Accès immédiat • Annulation 1 clic</p>
+                                    <p className="text-[10px] text-slate-400 font-medium">Accès immédiat • Annulation sans frais par email</p>
                                 </div>
                             </div>
                         </div>
@@ -239,11 +238,21 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       </div>
 
       {!( !isPremium && messages.filter(m => m.role === 'user').length >= 1 ) && (
-        <div className="p-4 border-t bg-white flex gap-3 flex-shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] pb-8 md:pb-4">
+        <div className="p-4 border-t bg-white flex gap-3 flex-shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] pb-10 md:pb-4">
           <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question ici..." className="flex-1 bg-slate-50 rounded-2xl px-6 py-4 text-[16px] outline-none border-2 border-transparent focus:border-indigo-100 transition-all shadow-inner" />
           <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-2xl shadow-lg hover:bg-indigo-700 transition-all active:scale-90"><Send size={24}/></button>
         </div>
       )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes bounce-subtle {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+        }
+        .animate-bounce-subtle {
+          animation: bounce-subtle 2s infinite ease-in-out;
+        }
+      `}} />
     </div>
   );
 };
@@ -332,8 +341,7 @@ export default function App() {
                     {!isPremium && <div className="p-8 bg-indigo-950 text-white rounded-[2rem] text-center shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-8 opacity-10"><Moon size={120}/></div>
                         <Lock size={40} className="mx-auto mb-4 text-indigo-300"/>
-                        <h4 className="text-xl font-black mb-2">Rapport Complet Verrouillé</h4>
-                        <p className="text-sm mb-6 text-indigo-200">Accédez à vos prévisions Famille et Argent.</p>
+                        <h4 className="text-xl font-black mb-2 uppercase tracking-tighter">Rapport Complet Verrouillé</h4>
                         <Button onClick={handleAction} variant="secondary" className="w-full py-5 text-indigo-950 font-black shadow-xl">DÉBLOQUER POUR {PRICE_TEXT}</Button>
                     </div>}
                   </div>
@@ -351,9 +359,9 @@ export default function App() {
                 <ChatView psychic={selectedPsychic} isPremium={isPremium} onGoBack={() => setSelectedPsychic(null)} onAction={handleAction} session={session} />
             ) : (
                 <div className="max-w-4xl mx-auto px-6 py-12">
-                    <div className="text-center mb-16">
+                    <div className="text-center mb-16 px-4">
                         <h1 className="text-4xl font-serif font-black text-indigo-950 leading-tight">Consultation de Voyance Privée</h1>
-                        <p className="text-slate-500 text-base mt-4 max-w-sm mx-auto font-medium">Réponse immédiate par chat sécurisé avec nos experts certifiés.</p>
+                        <p className="text-slate-500 text-base mt-4 max-w-sm mx-auto text-center font-medium">Réponse immédiate par chat sécurisé avec nos experts certifiés.</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                         {VOYANTES.map(p => (
@@ -390,7 +398,6 @@ export default function App() {
         )}
       </main>
 
-      {/* NAV BASSE FLOTTANTE */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-white/90 backdrop-blur-xl border border-white/20 h-20 rounded-[2.5rem] flex items-center justify-around z-50 px-8 shadow-[0_15px_50px_rgba(0,0,0,0.15)]">
         <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(null); setSelectedSign(null); setHoroscope(null); }} className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === 'voyance' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
           <MessageCircle size={26} fill={activeTab === 'voyance' ? "currentColor" : "none"}/><span className="text-[10px] uppercase font-black tracking-widest">Voyance</span>
