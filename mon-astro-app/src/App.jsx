@@ -23,7 +23,6 @@ const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supaba
 
 ReactGA.initialize(GA_MEASUREMENT_ID);
 
-// --- CONSTANTES ---
 const ZODIAC_SIGNS = [
   { id: 'belier', name: 'Bélier', icon: '♈' }, { id: 'taureau', name: 'Taureau', icon: '♉' },
   { id: 'gemeaux', name: 'Gémeaux', icon: '♊' }, { id: 'cancer', name: 'Cancer', icon: '♋' },
@@ -66,7 +65,6 @@ const VOYANTES = [
   }
 ];
 
-// --- COMPOSANTS ---
 const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }) => {
   const baseStyle = "px-6 py-4 rounded-full font-bold transition-all duration-300 transform active:scale-95 shadow-sm flex items-center justify-center text-base";
   const variants = { primary: "bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-slate-300", secondary: "bg-white text-indigo-900 border border-indigo-100" };
@@ -80,6 +78,9 @@ const AuthView = ({ onAuthSuccess, isLoginMode, onCancel, onSwitchToLogin }) => 
 
   const handleAuth = async () => {
     setLoading(true);
+    // --- TAG GA4 : DEMARRAGE INSCRIPTION/CONNEXION ---
+    ReactGA.event({ category: "Conversion", action: isLoginMode ? "Login_Attempt" : "Sign_Up_Start" });
+
     try {
       if (isLoginMode) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -146,32 +147,22 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       const response = await fetch(N8N_CHAT_WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            message: userMsg, 
-            voyanteId: psychic.id, 
-            userId: session?.user?.id || 'anonymous', 
-            isPremium,
-            history: messages.slice(-5)
-        })
+        body: JSON.stringify({ message: userMsg, voyanteId: psychic.id, userId: session?.user?.id || 'anonymous', isPremium, history: messages.slice(-5)})
       });
       const data = await response.json();
-      
-      // Délai aléatoire pour simuler la rédaction humaine
       const delay = Math.floor(Math.random() * (4000 - 2000 + 1)) + 2000;
-      
       setTimeout(() => {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Je reçois une vibration floue, pouvez-vous reformuler ?" }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: data.text || "La vision est trouble..." }]);
         setLoading(false);
       }, delay);
-      
     } catch (e) { 
-        setMessages(prev => [...prev, { role: 'assistant', content: "La connexion est instable. Je dois me reconcentrer." }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: "Erreur de connexion." }]);
         setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none text-slate-900">
+    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none">
       <div className="flex items-center gap-4 py-3 px-4 border-b bg-white flex-shrink-0 z-10 shadow-sm">
         <button onClick={onGoBack} className="p-1.5 bg-slate-50 rounded-full"><ArrowLeft size={20}/></button>
         <div className="relative">
@@ -180,7 +171,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         </div>
         <div className="flex-1">
             <h3 className="font-bold text-sm leading-none">{psychic.name}</h3>
-            <p className="text-[9px] text-emerald-600 font-bold tracking-widest uppercase">Consultation Privée</p>
+            <p className="text-[9px] text-emerald-600 font-bold uppercase">Consultation Privée</p>
         </div>
       </div>
 
@@ -200,44 +191,37 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         )}
         
         {[...messages].reverse().map((m, i) => {
-          // Logique de flou pour TOUS les voyants après la première réponse
           const isBlurry = !isPremium && m.role === 'assistant' && messages.filter(msg => msg.role === 'user').length >= 1 && i === 0;
-          
           const splitPoint = 60; 
           const visiblePart = isBlurry ? m.content.substring(0, splitPoint) : m.content;
           const blurryPart = isBlurry ? m.content.substring(splitPoint) : "";
 
           return (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 relative`}>
-              <div className={`max-w-[88%] p-4 rounded-2xl text-[16px] shadow-sm leading-relaxed transition-all ${
+              <div className={`max-w-[88%] p-4 rounded-2xl text-[16px] shadow-sm leading-relaxed ${
                 m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'
               }`}>
                 {visiblePart}
                 {isBlurry && (
                     <span className="filter blur-[14px] select-none opacity-40 block mt-2 leading-[1.6]">
-                        {blurryPart || "Voici l'analyse complète que j'ai reçue pour vous. Les énergies indiquent un changement majeur qui va impacter votre situation très rapidement. Il est impératif d'anticiper cet événement pour ne pas être prise au dépourvu. Cette personne cache quelque chose."}
+                        {blurryPart || "Les énergies indiquent un changement majeur qui va impacter votre situation très rapidement. Il est impératif d'anticiper cet événement."}
                     </span>
                 )}
               </div>
 
               {isBlurry && (
                 <div className="absolute inset-0 flex flex-col items-center justify-end z-20 pb-4">
-                    <div className="bg-white/95 p-6 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] border-2 border-indigo-50 text-center animate-in slide-in-from-bottom-10 w-[92%] mx-auto backdrop-blur-md">
-                        <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <Sparkles size={24} className="text-indigo-600 animate-pulse" />
-                        </div>
+                    <div className="bg-white/95 p-6 rounded-[2rem] shadow-2xl border-2 border-indigo-50 text-center animate-in slide-in-from-bottom-10 w-[92%] mx-auto backdrop-blur-md">
+                        <Sparkles size={24} className="text-indigo-600 mx-auto mb-3 animate-pulse" />
                         <p className="text-[14px] font-black text-indigo-950 leading-tight mb-4 uppercase tracking-tight">
-                            L'analyse de {psychic.name} est prête.<br/>
-                            <span className="text-indigo-600">Découvrez votre vérité.</span>
+                            L'analyse est prête.<br/><span className="text-indigo-600">Découvrez votre vérité.</span>
                         </p>
-                        <button onClick={onAction} className="bg-indigo-600 text-white text-[13px] font-black px-8 py-4 rounded-full uppercase shadow-xl hover:bg-indigo-700 transition-all w-full mb-3">
+                        <button onClick={onAction} className="bg-indigo-600 text-white text-[13px] font-black px-8 py-4 rounded-full uppercase shadow-xl hover:bg-indigo-700 w-full mb-2">
                             RÉVÉLER MA RÉPONSE ({PRICE_TEXT})
                         </button>
-                        <div className="space-y-1">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight flex items-center justify-center gap-1">
-                                <ShieldCheck size={12} className="text-emerald-500" /> Libellé discret : "Altéo Conseil"
-                            </p>
-                        </div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight flex items-center justify-center gap-1">
+                            <ShieldCheck size={12} className="text-emerald-500" /> Libellé discret : "Altéo Conseil"
+                        </p>
                     </div>
                 </div>
               )}
@@ -247,16 +231,15 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       </div>
 
       {!( !isPremium && messages.filter(m => m.role === 'user').length >= 1 ) && (
-        <div className="p-4 border-t bg-white flex gap-3 flex-shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
-          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question ici..." className="flex-1 bg-slate-50 rounded-2xl px-5 py-4 text-[16px] outline-none border-2 border-transparent focus:border-indigo-100 transition-all" />
-          <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-2xl shadow-lg active:scale-90 transition-transform"><Send size={24}/></button>
+        <div className="p-4 border-t bg-white flex gap-3 flex-shrink-0 shadow-sm">
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question..." className="flex-1 bg-slate-50 rounded-2xl px-5 py-4 text-[16px] outline-none border-2 border-transparent focus:border-indigo-100 transition-all" />
+          <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-2xl shadow-lg"><Send size={24}/></button>
         </div>
       )}
     </div>
   );
 };
 
-// --- APP ---
 export default function App() {
   const [activeTab, setActiveTab] = useState('voyance'); 
   const [viewState, setViewState] = useState('list'); 
@@ -292,10 +275,14 @@ export default function App() {
     if (selectedSign && supabase) {
       supabase.from('weekly_horoscopes').select('*').eq('sign_id', selectedSign.name).order('week_start_date', { ascending: false }).limit(1).single()
         .then(({data}) => setHoroscope(data));
+      ReactGA.send({ hitType: "pageview", page: `/horoscope/${selectedSign.id}` });
     }
   }, [selectedSign]);
 
   const handleAction = () => {
+    // --- TAG GA4 : CLIC BOUTON PAIEMENT DANS LE CHAT ---
+    ReactGA.event({ category: "Conversion", action: "Click Payment Button", label: selectedPsychic?.name || "General" });
+    
     if (!session) setViewState('auth');
     else window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
   };
@@ -321,7 +308,7 @@ export default function App() {
         )}
       </nav>
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto pb-24">
         {viewState === 'auth' ? (
             <AuthView isLoginMode={isLoginMode} onAuthSuccess={() => {}} onCancel={() => setViewState('list')} onSwitchToLogin={() => setIsLoginMode(!isLoginMode)}/>
         ) : (
@@ -336,7 +323,7 @@ export default function App() {
                       <div className="bg-rose-50/50 p-4 rounded-2xl"><h3 className="font-bold text-rose-600 border-b border-rose-100 text-[10px] uppercase mb-2">Cœur & Sentiments</h3><p className="text-sm text-slate-600">{horoscope?.love || "Stabilité à venir..."}</p></div>
                       <div className="bg-emerald-50/50 p-4 rounded-2xl"><h3 className="font-bold text-emerald-700 border-b border-emerald-100 text-[10px] uppercase mb-2">Carrière & Projets</h3><p className="text-sm text-slate-600">{horoscope?.work || "Changements positifs..."}</p></div>
                     </div>
-                    {!isPremium && <div className="p-6 bg-indigo-900 text-white rounded-3xl text-center shadow-xl"><Lock size={32} className="mx-auto mb-3 text-indigo-300"/><h4 className="font-bold mb-1">Rapport Complet Verrouillé</h4><p className="text-xs mb-4 text-indigo-200">Accédez à vos prévisions <strong>Famille</strong> et <strong>Chance</strong>.</p><Button onClick={handleAction} variant="secondary" className="w-full text-indigo-900 font-bold">DÉBLOQUER POUR {PRICE_TEXT}</Button></div>}
+                    {!isPremium && <div className="p-6 bg-indigo-900 text-white rounded-3xl text-center shadow-xl"><Lock size={32} className="mx-auto mb-3 text-indigo-300"/><h4 className="font-bold mb-1">Rapport Complet Verrouillé</h4><Button onClick={handleAction} variant="secondary" className="w-full text-indigo-900 font-bold">DÉBLOQUER POUR {PRICE_TEXT}</Button></div>}
                   </div>
                 </div>
               ) : (
@@ -356,25 +343,18 @@ export default function App() {
                         <h1 className="text-3xl font-serif font-black text-indigo-900 leading-tight">Consultation de Voyance Privée</h1>
                         <p className="text-slate-500 text-sm mt-3 max-w-xs mx-auto text-center font-medium">Réponse immédiate par chat sécurisé avec nos experts.</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-32">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {VOYANTES.map(p => (
-                            <div key={p.id} onClick={() => setSelectedPsychic(p)} className="bg-white rounded-[2.5rem] p-6 text-center border shadow-xl shadow-slate-200/50 cursor-pointer hover:border-indigo-300 transition-all group relative">
-                                {p.isTop && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[9px] font-black px-4 py-1.5 rounded-full uppercase shadow-sm">Expert Recommandé</div>}
+                            <div key={p.id} onClick={() => setSelectedPsychic(p)} className="bg-white rounded-[2.5rem] p-6 text-center border shadow-xl cursor-pointer hover:border-indigo-300 transition-all group relative">
                                 <div className="absolute top-4 right-4 bg-emerald-100 text-emerald-600 text-[8px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1"><div className="w-1 h-1 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>
-                                <img src={p.image} className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md group-hover:scale-105 transition-transform" />
-                                
+                                <img src={p.image} className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-md" />
                                 <div className="flex flex-col items-center gap-1 mb-3">
                                   <div className="flex items-center justify-center gap-1">
-                                      <div className="flex text-amber-500">
-                                        {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
-                                      </div>
+                                      <div className="flex text-amber-500">{[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}</div>
                                       <span className="text-xs font-bold text-slate-700 ml-1">{p.rating}</span>
                                   </div>
-                                  <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold tracking-tighter">
-                                      <Users size={12}/> <span>{p.reviews.toLocaleString()} consultations</span>
-                                  </div>
+                                  <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold tracking-tighter"><Users size={12}/> <span>{p.reviews.toLocaleString()} consultations</span></div>
                                 </div>
-
                                 <h3 className="font-bold text-xl text-indigo-900">{p.name}</h3>
                                 <p className="text-indigo-600 text-[10px] font-black uppercase mb-3 tracking-widest">{p.style}</p>
                                 <p className="text-xs text-slate-500 leading-relaxed mb-6 h-auto min-h-[48px] italic">"{p.desc}"</p>
@@ -382,12 +362,12 @@ export default function App() {
                             </div>
                         ))}
                     </div>
-                    <div className="mt-12 bg-white p-8 rounded-[2rem] border border-slate-100 text-center space-y-5">
-                        <div className="flex justify-center gap-8 opacity-60">
+                    <div className="mt-12 bg-white p-8 rounded-[2rem] border border-slate-100 text-center space-y-4">
+                        <div className="flex justify-center gap-8 opacity-40">
                           <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-4" alt="Visa" />
                           <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-4" alt="Mastercard" />
                         </div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">Paiement 100% Sécurisé & Discret - Débit "Altéo Conseil"</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Paiement Sécurisé & Débit Discret (Libellé : Altéo Conseil)</p>
                     </div>
                 </div>
             )
@@ -395,11 +375,11 @@ export default function App() {
         )}
       </main>
 
-      <div className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-md border-t h-20 flex items-center justify-around z-50 px-6 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-        <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(null); setSelectedSign(null); setHoroscope(null); }} className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === 'voyance' ? 'text-indigo-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
+      <div className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t h-20 flex items-center justify-around z-50 px-6 shadow-2xl">
+        <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(null); setSelectedSign(null); }} className={`flex flex-col items-center gap-1.5 ${activeTab === 'voyance' ? 'text-indigo-600' : 'text-slate-400'}`}>
           <MessageCircle size={24} fill={activeTab === 'voyance' ? "currentColor" : "none"}/><span className="text-[10px] uppercase font-black">Voyance</span>
         </button>
-        <button onClick={() => { setActiveTab('horoscope'); setSelectedSign(null); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === 'horoscope' ? 'text-indigo-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
+        <button onClick={() => { setActiveTab('horoscope'); setSelectedSign(null); setSelectedPsychic(null); }} className={`flex flex-col items-center gap-1.5 ${activeTab === 'horoscope' ? 'text-indigo-600' : 'text-slate-400'}`}>
           <Moon size={24} fill={activeTab === 'horoscope' ? "currentColor" : "none"}/><span className="text-[10px] uppercase font-black">Horoscope</span>
         </button>
       </div>
