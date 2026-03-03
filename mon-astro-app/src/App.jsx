@@ -6,7 +6,7 @@ import {
   Star, Moon, Sun, Lock, ChevronRight, User, Check, Sparkles, 
   ArrowLeft, Menu, X, LogOut, Loader2, MessageCircle, Send,
   Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Clock, ShieldCheck, Mail, Key, Settings,
-  ThumbsUp, Users, Shield, Heart, Eye, Zap
+  ThumbsUp, Users, Shield, Heart, Zap
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -14,6 +14,7 @@ const STRIPE_LINK = "https://buy.stripe.com/6oUdR8gX08J0cbO2q0dAk00";
 const N8N_CHAT_WEBHOOK = "https://landingfactory.app.n8n.cloud/webhook/chat-voyance";
 const CONTACT_EMAIL = "gestion@alteoconseil.fr";
 const PRICE_TEXT = "2,99€/mois";
+const FREE_CHAT_LIMIT = 2; 
 const GA_MEASUREMENT_ID = "G-V5V2VV84LG"; 
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -98,7 +99,7 @@ const AuthView = ({ onAuthSuccess, isLoginMode, onCancel, onSwitchToLogin }) => 
         <div className="space-y-4">
           <input type="email" placeholder="Votre email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100 transition-all"/>
           <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100 transition-all"/>
-          <Button onClick={handleAuth} disabled={loading} className="w-full py-5 text-lg">{loading ? <Loader2 className="animate-spin mx-auto"/> : "Accéder à ma réponse"}</Button>
+          <Button onClick={handleAuth} disabled={loading} className="w-full py-5 text-lg">{loading ? <Loader2 className="animate-spin mx-auto"/> : "Continuer"}</Button>
         </div>
         <button onClick={onSwitchToLogin} className="mt-8 block w-full text-sm text-indigo-600 font-bold underline">
             {isLoginMode ? "Pas de compte ? Créer mon profil" : "Déjà inscrit ? Me connecter"}
@@ -163,8 +164,8 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
           <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></div>
         </div>
         <div className="flex-1">
-            <h3 className="font-black text-[15px] leading-none text-indigo-950">{psychic.name}</h3>
-            <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-[0.1em] mt-1">Cabinet Privé • En ligne</p>
+            <h3 className="font-black text-[15px] text-indigo-950">{psychic.name}</h3>
+            <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">En ligne • Privé</p>
         </div>
       </div>
 
@@ -173,12 +174,10 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         
         {loading && (
             <div className="flex justify-start mb-6">
-                <div className="bg-white border border-slate-100 p-5 rounded-3xl rounded-bl-none shadow-sm">
-                    <div className="flex gap-1.5">
-                        <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                        <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                        <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce"></div>
-                    </div>
+                <div className="bg-white border border-slate-100 p-5 rounded-3xl rounded-bl-none shadow-sm flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce"></div>
                 </div>
             </div>
         )}
@@ -191,7 +190,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
           return (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-6 relative`}>
-              <div className={`max-w-[90%] p-5 rounded-[1.75rem] text-[16px] leading-relaxed shadow-sm transition-all ${
+              <div className={`max-w-[92%] p-5 rounded-[1.75rem] text-[16px] leading-relaxed shadow-sm transition-all ${
                 m.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'
               }`}>
                 {visiblePart}
@@ -203,26 +202,25 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
                         
                         {/* PAYWALL OVERLAY */}
                         <div className="absolute inset-x-0 -bottom-2 pt-14 pb-2 flex flex-col items-center justify-end z-20">
-                            <div className="bg-white/95 p-8 rounded-[3rem] shadow-xl border border-slate-100 text-center animate-in slide-in-from-bottom-12 w-full backdrop-blur-xl">
-                                <p className="text-[17px] font-black text-indigo-950 leading-tight mb-6">
+                            <div className="bg-white/95 p-8 rounded-[3rem] shadow-[0_20px_60px_rgba(0,0,0,0.25)] border border-slate-100 text-center animate-in slide-in-from-bottom-12 w-full backdrop-blur-xl">
+                                <p className="text-[17px] font-black text-indigo-950 leading-tight mb-8">
                                     Ma vision est complète.<br/>
-                                    <span className="text-amber-600 uppercase text-sm tracking-widest">Voulez-vous savoir la vérité ?</span>
+                                    <span className="text-amber-600 uppercase text-xs tracking-widest">Accédez à votre vérité</span>
                                 </p>
 
-                                {/* BOUTON EN RÉEL RELIEF (3D) */}
+                                {/* BOUTON RELIEF SANS OEIL */}
                                 <button 
                                     onClick={onAction} 
-                                    className="relative w-full bg-gradient-to-b from-amber-300 via-amber-500 to-amber-600 text-white text-[17px] font-black py-6 rounded-2xl flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02] active:translate-y-1 active:shadow-inner border-t border-amber-200 shadow-[0_10px_0_0_#b45309,0_15px_30px_rgba(0,0,0,0.3)] group animate-bounce-subtle"
+                                    className="relative w-full bg-gradient-to-b from-amber-400 to-amber-600 text-white text-[16px] font-black py-6 rounded-2xl flex items-center justify-center transition-all transform hover:scale-[1.02] active:translate-y-1 border-t border-amber-300 shadow-[0_8px_0_0_#b45309,0_15px_30px_rgba(0,0,0,0.3)] animate-pulse-subtle"
                                 >
-                                    <Eye size={22} className="group-hover:scale-110 transition-transform" />
-                                    DÉBLOQUER MA RÉPONSE ({PRICE_TEXT})
+                                    RÉVÉLER MA RÉPONSE ({PRICE_TEXT})
                                 </button>
 
-                                <div className="space-y-2 mt-8">
+                                <div className="space-y-2 mt-10">
                                     <p className="text-[11px] text-slate-600 font-black uppercase tracking-widest flex items-center justify-center gap-2">
                                         <ShieldCheck size={16} className="text-emerald-500" /> Libellé discret : "Altéo Conseil"
                                     </p>
-                                    <p className="text-[10px] text-slate-400 font-medium italic">Accès immédiat • Annulation 1 clic</p>
+                                    <p className="text-[10px] text-slate-400 font-medium">Accès immédiat • Annulation 1 clic</p>
                                 </div>
                             </div>
                         </div>
@@ -237,17 +235,17 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       {!( !isPremium && messages.filter(m => m.role === 'user').length >= 1 ) && (
         <div className="p-4 border-t bg-white flex gap-3 flex-shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] pb-10 md:pb-4">
           <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Posez votre question ici..." className="flex-1 bg-slate-50 rounded-2xl px-6 py-4 text-[16px] outline-none border-2 border-transparent focus:border-indigo-100 transition-all shadow-inner" />
-          <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-2xl shadow-lg hover:bg-indigo-700 transition-all active:scale-90"><Send size={24}/></button>
+          <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-2xl shadow-lg transition-transform active:scale-90"><Send size={24}/></button>
         </div>
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes bounce-subtle {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3px); }
+        @keyframes pulse-subtle {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.02); }
         }
-        .animate-bounce-subtle {
-          animation: bounce-subtle 2s infinite ease-in-out;
+        .animate-pulse-subtle {
+          animation: pulse-subtle 3s infinite ease-in-out;
         }
       `}} />
     </div>
@@ -301,11 +299,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col font-sans">
-      <Helmet><title>AstroPure | Cabinet de Voyance Privée</title></Helmet>
+      <Helmet><title>AstroPure | Cabinet de Voyance Spécialisée</title></Helmet>
 
       {viewState === 'list' && !selectedPsychic && !selectedSign && (
-        <div className="bg-indigo-950 text-white text-[10px] py-3 text-center font-black flex items-center justify-center gap-4 uppercase tracking-[0.2em] z-[60]">
-          <Shield size={14} className="text-indigo-400" /> Cabinet Privé de Voyance <Shield size={14} className="text-indigo-400" />
+        <div className="bg-indigo-950 text-white text-[9px] py-3 text-center font-black flex items-center justify-center gap-4 uppercase tracking-[0.2em] z-[60]">
+          <Shield size={14} className="text-indigo-400" /> Cabinet de Voyance Privé <Shield size={14} className="text-indigo-400" />
         </div>
       )}
 
@@ -316,7 +314,7 @@ export default function App() {
         {session ? (
             <button onClick={() => supabase.auth.signOut()} className="text-slate-400 p-2 hover:bg-slate-50 rounded-full transition-colors"><LogOut size={22}/></button>
         ) : (
-            <button onClick={() => {setIsLoginMode(true); setViewState('auth');}} className="text-[11px] font-black text-indigo-600 bg-indigo-50/50 px-5 py-2.5 rounded-full uppercase border border-indigo-100 tracking-tight hover:bg-indigo-50 transition-colors">Accès Client</button>
+            <button onClick={() => {setIsLoginMode(true); setViewState('auth');}} className="text-[11px] font-black text-indigo-600 bg-indigo-50/50 px-5 py-2.5 rounded-full uppercase border border-indigo-100 tracking-tight">Accès Client</button>
         )}
       </nav>
 
@@ -338,16 +336,16 @@ export default function App() {
                     {!isPremium && <div className="p-8 bg-indigo-950 text-white rounded-[2rem] text-center shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-8 opacity-10"><Moon size={120}/></div>
                         <Lock size={40} className="mx-auto mb-4 text-indigo-300"/>
-                        <h4 className="text-xl font-black mb-2 uppercase tracking-tighter">Rapport Complet Verrouillé</h4>
+                        <h4 className="text-xl font-black mb-2 uppercase tracking-tighter text-center">Rapport Complet Verrouillé</h4>
                         <Button onClick={handleAction} variant="secondary" className="w-full py-5 text-indigo-950 font-black shadow-xl">DÉBLOQUER POUR {PRICE_TEXT}</Button>
                     </div>}
                   </div>
                 </div>
               ) : (
                 <div className="max-w-5xl mx-auto px-6 py-12">
-                  <div className="text-center mb-16"><h1 className="text-4xl font-serif font-black text-indigo-950">Horoscope Hebdomadaire</h1><p className="text-slate-500 mt-4 font-medium">Messages des astres pour votre signe.</p></div>
+                  <div className="text-center mb-16"><h1 className="text-4xl font-serif font-black text-indigo-950">Horoscope Hebdomadaire</h1></div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    {ZODIAC_SIGNS.map(s => <div key={s.id} onClick={() => setSelectedSign(s)} className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 cursor-pointer hover:border-indigo-300 hover:shadow-xl hover:-translate-y-1 transition-all text-center group"><div className="text-5xl mb-4 group-hover:scale-110 transition-transform">{s.icon}</div><div className="font-black text-indigo-950 text-lg uppercase tracking-tight">{s.name}</div></div>)}
+                    {ZODIAC_SIGNS.map(s => <div key={s.id} onClick={() => setSelectedSign(s)} className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 cursor-pointer hover:border-indigo-300 hover:shadow-xl transition-all text-center group"><div className="text-5xl mb-4 group-hover:scale-110 transition-transform">{s.icon}</div><div className="font-black text-indigo-950 text-lg uppercase tracking-tight">{s.name}</div></div>)}
                   </div>
                 </div>
               )
@@ -357,14 +355,14 @@ export default function App() {
             ) : (
                 <div className="max-w-4xl mx-auto px-6 py-12">
                     <div className="text-center mb-16 px-4">
-                        <h1 className="text-4xl font-serif font-black text-indigo-950 leading-tight">Consultation de Voyance Privée</h1>
-                        <p className="text-slate-500 text-base mt-4 max-w-sm mx-auto text-center font-medium">Réponse immédiate par chat sécurisé avec nos experts certifiés.</p>
+                        <h1 className="text-4xl font-serif font-black text-indigo-900 leading-tight">Cabinet de Voyance Privée</h1>
+                        <p className="text-slate-500 text-base mt-4 max-w-sm mx-auto text-center font-medium">Réponse immédiate par chat sécurisé avec nos experts.</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                         {VOYANTES.map(p => (
-                            <div key={p.id} onClick={() => setSelectedPsychic(p)} className="bg-white rounded-[3rem] p-8 text-center border border-slate-100 shadow-xl hover:border-indigo-200 transition-all group relative hover:-translate-y-2">
-                                {p.isTop && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[10px] font-black px-6 py-2 rounded-full uppercase shadow-lg">Expert Recommandé</div>}
-                                <div className="absolute top-6 right-8 bg-emerald-50 text-emerald-600 text-[9px] font-black px-3 py-1.5 rounded-full uppercase flex items-center gap-1.5 border border-emerald-100"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>
+                            <div key={p.id} onClick={() => setSelectedPsychic(p)} className="bg-white rounded-[3rem] p-8 text-center border border-slate-100 shadow-xl hover:border-indigo-200 transition-all group relative">
+                                {p.isTop && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[10px] font-black px-6 py-2 rounded-full uppercase shadow-lg whitespace-nowrap">Expert Recommandé</div>}
+                                <div className="absolute top-6 right-8 bg-emerald-100 text-emerald-600 text-[9px] font-black px-3 py-1.5 rounded-full uppercase flex items-center gap-1.5 border border-emerald-100"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>
                                 <img src={p.image} className="w-32 h-32 rounded-full object-cover mx-auto mb-6 border-4 border-white shadow-xl group-hover:scale-105 transition-transform" />
                                 
                                 <div className="flex flex-col items-center gap-2 mb-4">
@@ -383,7 +381,7 @@ export default function App() {
                         ))}
                     </div>
                     <div className="mt-20 bg-white p-10 rounded-[3rem] border border-slate-100 text-center shadow-sm">
-                        <div className="flex justify-center gap-12 opacity-50 mb-6 grayscale hover:grayscale-0 transition-all">
+                        <div className="flex justify-center gap-12 opacity-50 mb-6 grayscale">
                           <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-5" alt="Visa" />
                           <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-5" alt="Mastercard" />
                         </div>
