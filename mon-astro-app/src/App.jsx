@@ -104,7 +104,6 @@ const AuthView = ({ onAuthSuccess, isLoginMode, onCancel, onSwitchToLogin }) => 
 
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [messages, setMessages] = useState(() => {
-    // On essaie d'abord de récupérer l'historique utilisateur, sinon l'anonyme (pour le retour de Stripe)
     const userKey = `astro_hist_${psychic.id}_${session?.user?.id}`;
     const anonKey = `astro_hist_${psychic.id}_anon`;
     const saved = localStorage.getItem(userKey) || localStorage.getItem(anonKey);
@@ -119,7 +118,6 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
     }
-    // On sauvegarde systématiquement pour ne pas perdre la réponse IA avant paiement
     const key = session?.user?.id ? `astro_hist_${psychic.id}_${session.user.id}` : `astro_hist_${psychic.id}_anon`;
     localStorage.setItem(key, JSON.stringify(messages));
     if (session?.user?.id) localStorage.setItem(`astro_hist_${psychic.id}_anon`, JSON.stringify(messages));
@@ -199,10 +197,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
           <div className="max-w-md mx-auto text-center space-y-5 animate-in slide-in-from-bottom-6">
             <h4 className="text-xl font-black text-indigo-950 tracking-tight">Votre vérité est prête</h4>
             <p className="text-sm text-slate-500">Débloquez la réponse de {psychic.name} et accédez à votre chat privé en illimité.</p>
-            <button 
-              onClick={onAction}
-              className="w-full bg-gradient-to-b from-amber-400 to-amber-600 text-white py-5 rounded-2xl font-black text-lg shadow-[0_5px_0_0_#b45309] active:translate-y-1 active:shadow-none transition-all cursor-pointer flex flex-col items-center"
-            >
+            <button onClick={onAction} className="w-full bg-gradient-to-b from-amber-400 to-amber-600 text-white py-5 rounded-2xl font-black text-lg shadow-[0_5px_0_0_#b45309] active:translate-y-1 active:shadow-none transition-all cursor-pointer flex flex-col items-center">
               RÉVÉLER MA RÉPONSE
               <span className="text-[11px] opacity-90 font-bold tracking-widest">({PRICE_TEXT})</span>
             </button>
@@ -333,7 +328,6 @@ export default function App() {
                             <div key={p.id} onClick={() => setSelectedPsychic(p)} className="bg-white rounded-[3rem] p-8 text-center border border-slate-100 shadow-xl hover:border-indigo-200 transition-all group relative cursor-pointer">
                                 {p.isTop && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[10px] font-black px-6 py-2 rounded-full uppercase shadow-lg">Expert Recommandé</div>}
                                 <img src={p.image} className="w-32 h-32 rounded-full object-cover mx-auto mb-6 border-4 border-white shadow-xl" />
-                                
                                 <div className="flex flex-col items-center gap-2 mb-4">
                                   <div className="flex items-center justify-center gap-1.5">
                                       <div className="flex text-amber-400">{[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}</div>
@@ -341,7 +335,6 @@ export default function App() {
                                   </div>
                                   <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold tracking-widest"><Users size={12}/> <span>{p.reviews.toLocaleString()} avis</span></div>
                                 </div>
-
                                 <h3 className="font-black text-2xl text-indigo-950 mb-1">{p.name}</h3>
                                 <p className="text-indigo-600 text-[11px] font-black uppercase mb-4 tracking-[0.2em]">{p.style}</p>
                                 <p className="text-sm text-slate-500 italic mb-8 h-auto min-h-[60px]">"{p.desc}"</p>
@@ -375,12 +368,9 @@ export default function App() {
         </button>
       </div>
 
-      {/* --- MODALES --- */}
       <Modal isOpen={modalType === 'cgv'} onClose={() => setModalType(null)} title="CGV / CGU">
         <h4 className="font-bold text-indigo-950">Abonnement</h4>
         <p>Tarif : {PRICE_TEXT} par mois. Sans engagement. Résiliation par simple email à {CONTACT_EMAIL}.</p>
-        <h4 className="font-bold text-indigo-950">Service</h4>
-        <p>AstroPure est un service récréatif de divertissement. Les réponses IA ne remplacent pas un avis professionnel.</p>
       </Modal>
 
       <Modal isOpen={modalType === 'privacy'} onClose={() => setModalType(null)} title="Politique de Confidentialité">
@@ -392,7 +382,6 @@ export default function App() {
         <p><strong>Editeur :</strong> ALTEO CONSULTING</p>
         <p><strong>Adresse :</strong> 2 RUE NOTRE-DAME DES VICTOIRES, 75002 PARIS</p>
         <p><strong>SIRET :</strong> 99335347300016</p>
-        <p><strong>Capital :</strong> 5 000,00 €</p>
         <p><strong>Contact :</strong> {CONTACT_EMAIL}</p>
       </Modal>
 
