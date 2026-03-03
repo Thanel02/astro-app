@@ -6,7 +6,7 @@ import {
   Star, Moon, Sun, Lock, ChevronRight, User, Check, Sparkles, 
   ArrowLeft, Menu, X, LogOut, Loader2, MessageCircle, Send,
   Bot, AlertTriangle, AlertCircle, LayoutGrid, Bell, Clock, ShieldCheck, Mail, Key, Settings,
-  ThumbsUp, Users, Shield, Heart, Zap
+  ThumbsUp, Users, Shield, Heart, Eye, Zap, Info, FileText
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -99,7 +99,7 @@ const AuthView = ({ onAuthSuccess, isLoginMode, onCancel, onSwitchToLogin }) => 
         <div className="space-y-4">
           <input type="email" placeholder="Votre email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100 transition-all"/>
           <input type="password" placeholder="Mot de passe" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100 transition-all"/>
-          <Button onClick={handleAuth} disabled={loading} className="w-full py-5 text-lg">{loading ? <Loader2 className="animate-spin mx-auto"/> : "Continuer"}</Button>
+          <Button onClick={handleAuth} disabled={loading} className="w-full py-5 text-lg">{loading ? <Loader2 className="animate-spin mx-auto"/> : "Accéder à ma réponse"}</Button>
         </div>
         <button onClick={onSwitchToLogin} className="mt-8 block w-full text-sm text-indigo-600 font-bold underline">
             {isLoginMode ? "Pas de compte ? Créer mon profil" : "Déjà inscrit ? Me connecter"}
@@ -196,31 +196,33 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
                 {visiblePart}
                 {isBlurry && (
                     <div className="relative mt-2">
-                        <span className="filter blur-[18px] opacity-25 select-none block leading-7">
+                        <span className="filter blur-[20px] opacity-25 select-none block leading-7">
                             {blurryPart || "Voici l'analyse complète que j'ai reçue pour vous. Les énergies indiquent un changement majeur qui va impacter votre situation très rapidement. Il est impératif d'anticiper cet événement pour ne pas être surprise. Cette personne cache quelque chose qui sera révélé bientôt."}
                         </span>
                         
-                        {/* PAYWALL OVERLAY */}
                         <div className="absolute inset-x-0 -bottom-2 pt-14 pb-2 flex flex-col items-center justify-end z-20">
-                            <div className="bg-white/95 p-8 rounded-[3rem] shadow-[0_20px_60px_rgba(0,0,0,0.25)] border border-slate-100 text-center animate-in slide-in-from-bottom-12 w-full backdrop-blur-xl">
+                            <div className="bg-white/98 p-8 rounded-[3rem] shadow-[0_20px_60px_rgba(0,0,0,0.25)] border border-slate-100 text-center animate-in slide-in-from-bottom-12 w-full backdrop-blur-xl">
                                 <p className="text-[17px] font-black text-indigo-950 leading-tight mb-8">
                                     Ma vision est complète.<br/>
                                     <span className="text-amber-600 uppercase text-xs tracking-widest">Accédez à votre vérité</span>
                                 </p>
 
-                                {/* BOUTON RELIEF SANS OEIL */}
                                 <button 
                                     onClick={onAction} 
-                                    className="relative w-full bg-gradient-to-b from-amber-400 to-amber-600 text-white text-[16px] font-black py-6 rounded-2xl flex items-center justify-center transition-all transform hover:scale-[1.02] active:translate-y-1 border-t border-amber-300 shadow-[0_8px_0_0_#b45309,0_15px_30px_rgba(0,0,0,0.3)] animate-pulse-subtle"
+                                    className="relative w-full bg-gradient-to-b from-amber-400 to-amber-600 text-white text-[18px] font-black py-6 rounded-2xl flex items-center justify-center gap-1.5 transition-all transform hover:scale-[1.02] active:translate-y-1 border-t border-amber-300 shadow-[0_8px_0_0_#b45309,0_15px_30px_rgba(0,0,0,0.3)]"
                                 >
-                                    RÉVÉLER MA RÉPONSE ({PRICE_TEXT})
+                                    RÉVÉLER MA RÉPONSE 
+                                    <span className="text-[13px] font-bold opacity-90 ml-1">({PRICE_TEXT})</span>
                                 </button>
 
-                                <div className="space-y-2 mt-10">
+                                <div className="space-y-3 mt-10">
                                     <p className="text-[11px] text-slate-600 font-black uppercase tracking-widest flex items-center justify-center gap-2">
                                         <ShieldCheck size={16} className="text-emerald-500" /> Libellé discret : "Altéo Conseil"
                                     </p>
-                                    <p className="text-[10px] text-slate-400 font-medium">Accès immédiat • Annulation 1 clic</p>
+                                    <div className="flex flex-col gap-1 border-t border-slate-100 pt-4 opacity-70">
+                                        <p className="text-[10px] text-slate-400">Accès immédiat • Désabonnement simple par email</p>
+                                        <p className="text-[9px] text-slate-400 font-medium">En cliquant, vous acceptez les CGV et notre Politique de Confidentialité.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -238,16 +240,6 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
           <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-2xl shadow-lg transition-transform active:scale-90"><Send size={24}/></button>
         </div>
       )}
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes pulse-subtle {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.02); }
-        }
-        .animate-pulse-subtle {
-          animation: pulse-subtle 3s infinite ease-in-out;
-        }
-      `}} />
     </div>
   );
 };
@@ -334,10 +326,9 @@ export default function App() {
                       <div className="bg-emerald-50/30 p-6 rounded-3xl border border-emerald-50"><h3 className="font-black text-emerald-700 text-xs uppercase mb-3 tracking-widest flex items-center gap-2"><Sparkles size={16}/> Carrière & Projets</h3><p className="text-[15px] text-slate-600 leading-relaxed">{horoscope?.work || "Changements positifs..."}</p></div>
                     </div>
                     {!isPremium && <div className="p-8 bg-indigo-950 text-white rounded-[2rem] text-center shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8 opacity-10"><Moon size={120}/></div>
                         <Lock size={40} className="mx-auto mb-4 text-indigo-300"/>
-                        <h4 className="text-xl font-black mb-2 uppercase tracking-tighter text-center">Rapport Complet Verrouillé</h4>
-                        <Button onClick={handleAction} variant="secondary" className="w-full py-5 text-indigo-950 font-black shadow-xl">DÉBLOQUER POUR {PRICE_TEXT}</Button>
+                        <h4 className="text-xl font-black mb-2 uppercase tracking-tighter">Rapport Complet Verrouillé</h4>
+                        <Button onClick={handleAction} variant="secondary" className="w-full py-5 text-indigo-950 font-black shadow-xl">DÉBLOQUER ({PRICE_TEXT})</Button>
                     </div>}
                   </div>
                 </div>
@@ -362,7 +353,7 @@ export default function App() {
                         {VOYANTES.map(p => (
                             <div key={p.id} onClick={() => setSelectedPsychic(p)} className="bg-white rounded-[3rem] p-8 text-center border border-slate-100 shadow-xl hover:border-indigo-200 transition-all group relative">
                                 {p.isTop && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[10px] font-black px-6 py-2 rounded-full uppercase shadow-lg whitespace-nowrap">Expert Recommandé</div>}
-                                <div className="absolute top-6 right-8 bg-emerald-100 text-emerald-600 text-[9px] font-black px-3 py-1.5 rounded-full uppercase flex items-center gap-1.5 border border-emerald-100"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>
+                                <div className="absolute top-6 right-8 bg-emerald-100 text-emerald-600 text-[8px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1 border border-emerald-100"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div>En ligne</div>
                                 <img src={p.image} className="w-32 h-32 rounded-full object-cover mx-auto mb-6 border-4 border-white shadow-xl group-hover:scale-105 transition-transform" />
                                 
                                 <div className="flex flex-col items-center gap-2 mb-4">
@@ -380,12 +371,39 @@ export default function App() {
                             </div>
                         ))}
                     </div>
-                    <div className="mt-20 bg-white p-10 rounded-[3rem] border border-slate-100 text-center shadow-sm">
-                        <div className="flex justify-center gap-12 opacity-50 mb-6 grayscale">
-                          <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-5" alt="Visa" />
-                          <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-5" alt="Mastercard" />
+
+                    {/* SECTION LEGALE & RASSURANCE */}
+                    <div className="mt-20 space-y-12">
+                        <div className="bg-white p-10 rounded-[3rem] border border-slate-100 text-center shadow-sm">
+                            <div className="flex justify-center gap-12 opacity-50 mb-8 grayscale">
+                              <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-5" alt="Visa" />
+                              <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-5" alt="Mastercard" />
+                            </div>
+                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Paiement 100% Sécurisé & Débit Discret (Libellé : Altéo Conseil)</p>
+                            <div className="flex justify-center gap-6 text-[10px] text-slate-400 font-bold border-t border-slate-50 pt-6">
+                                <button className="hover:text-indigo-600 transition-colors uppercase">CGV</button>
+                                <button className="hover:text-indigo-600 transition-colors uppercase">Politique de Confidentialité</button>
+                                <button className="hover:text-indigo-600 transition-colors uppercase">Mentions Légales</button>
+                            </div>
                         </div>
-                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Paiement 100% Sécurisé & Débit Discret (Libellé : Altéo Conseil)</p>
+
+                        <div className="bg-indigo-50/50 p-8 rounded-[2rem] border border-indigo-100">
+                            <div className="flex items-start gap-4">
+                                <Info className="text-indigo-400 shrink-0 mt-1" size={20} />
+                                <div className="space-y-3">
+                                    <h5 className="font-black text-indigo-950 text-sm uppercase tracking-tight">Gestion de votre abonnement</h5>
+                                    <p className="text-xs text-slate-600 leading-relaxed">
+                                        Notre service est proposé sous forme d'abonnement sans engagement à {PRICE_TEXT}. 
+                                        Vous pouvez demander l'arrêt de votre abonnement à tout moment et sans motif par simple email à <strong>{CONTACT_EMAIL}</strong>. 
+                                        Votre demande sera traitée sous 24h ouvrées.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <footer className="text-center pb-12">
+                            <p className="text-[10px] text-slate-400 font-medium">© 2026 AstroPure • Service de divertissement réservé aux personnes majeures</p>
+                        </footer>
                     </div>
                 </div>
             )
