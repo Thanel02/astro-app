@@ -30,9 +30,9 @@ const ZODIAC_SIGNS = [
 ];
 
 const VOYANTES = [
-  { id: 'nathalie', name: 'Nathalie', desc: 'Experte reconnue en relations amoureuses.', style: 'Analytique & Intuitive', image: '/nathalie-voyante-astropure.png', welcome: "Bonjour, je suis Nathalie. Quel est le prénom de la personne qui occupe vos pensées ?", rating: 4.8, reviews: 892, isTop: true },
-  { id: 'caroline', name: 'Caroline', desc: 'Médium pur de naissance. Flashs directs.', style: 'Sincère et Directe', image: '/caroline-voyante-astropure.png', welcome: "Bonjour, je suis Caroline. Posez-moi votre question.", rating: 4.9, reviews: 1248, isTop: false },
-  { id: 'pierre', name: 'Maître Pierre', desc: 'Astrologue certifié. Expert cycles de vie.', style: 'Analytique et Expert', image: '/pierre-voyant-astropure.png', welcome: "Bonjour, ici Pierre. Donnez-moi votre prénom pour commencer.", rating: 4.9, reviews: 2105, isTop: false }
+  { id: 'nathalie', name: 'Nathalie', desc: 'Experte reconnue en relations amoureuses et psychologie du couple.', style: 'Analytique & Intuitive', image: '/nathalie-voyante-astropure.png', welcome: "Bonjour, je suis Nathalie. Quel est le prénom de la personne qui occupe vos pensées ?", rating: 4.8, reviews: 892, isTop: true },
+  { id: 'caroline', name: 'Caroline', desc: 'Médium pur de naissance. Ses flashs sont directs et sans complaisance.', style: 'Sincère et Directe', image: '/caroline-voyante-astropure.png', welcome: "Bonjour, je suis Caroline. Posez-moi votre question, je vous écoute.", rating: 4.9, reviews: 1248, isTop: false },
+  { id: 'pierre', name: 'Maître Pierre', desc: 'Astrologue certifié. Expert dans les cycles de vie et périodes propices.', style: 'Analytique et Expert', image: '/pierre-voyant-astropure.png', welcome: "Bonjour, ici Pierre. Donnez-moi votre prénom pour commencer l'étude.", rating: 4.9, reviews: 2105, isTop: false }
 ];
 
 // --- UI COMPONENTS ---
@@ -104,8 +104,10 @@ const AuthView = ({ onAuthSuccess, isLoginMode, onCancel, onSwitchToLogin }) => 
 
 const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [messages, setMessages] = useState(() => {
-    const key = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
-    const saved = localStorage.getItem(key);
+    // On essaie d'abord de récupérer l'historique utilisateur, sinon l'anonyme (pour le retour de Stripe)
+    const userKey = `astro_hist_${psychic.id}_${session?.user?.id}`;
+    const anonKey = `astro_hist_${psychic.id}_anon`;
+    const saved = localStorage.getItem(userKey) || localStorage.getItem(anonKey);
     return saved ? JSON.parse(saved) : [{ role: 'assistant', content: psychic.welcome }];
   });
 
@@ -113,14 +115,15 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   const [loading, setLoading] = useState(false);
   const scrollContainerRef = useRef(null);
 
-  // Correction du scroll : Utilisation d'un effet qui surveille la taille du contenu
   useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
     }
-    const key = `astro_hist_${psychic.id}_${session?.user?.id || 'anon'}`;
+    // On sauvegarde systématiquement pour ne pas perdre la réponse IA avant paiement
+    const key = session?.user?.id ? `astro_hist_${psychic.id}_${session.user.id}` : `astro_hist_${psychic.id}_anon`;
     localStorage.setItem(key, JSON.stringify(messages));
-  }, [messages, loading]);
+    if (session?.user?.id) localStorage.setItem(`astro_hist_${psychic.id}_anon`, JSON.stringify(messages));
+  }, [messages, loading, session, psychic.id]);
 
   const handleSend = async () => {
     const userMsgCount = messages.filter(m => m.role === 'user').length;
@@ -138,11 +141,11 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
       });
       const data = await response.json();
       setTimeout(() => {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.text || "La vibration est confuse, essayez de reformuler." }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: data.text || "Je reçois une vibration floue, pouvez-vous préciser ?" }]);
         setLoading(false);
       }, 2500);
     } catch (e) { 
-        setMessages(prev => [...prev, { role: 'assistant', content: "Connexion instable..." }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: "La connexion spirituelle a été interrompue. Réessayez." }]);
         setLoading(false);
     }
   };
@@ -151,7 +154,6 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
   return (
     <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none">
-      {/* Header */}
       <div className="flex items-center gap-4 py-4 px-5 border-b bg-white/95 backdrop-blur-md sticky top-0 z-20">
         <button onClick={onGoBack} className="p-2 bg-slate-50 rounded-full"><ArrowLeft size={20}/></button>
         <div className="relative">
@@ -160,15 +162,11 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         </div>
         <div className="flex-1">
             <h3 className="font-black text-[15px] text-indigo-950">{psychic.name}</h3>
-            <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">En ligne • Consultation Privée</p>
+            <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">En ligne • Salon Privé</p>
         </div>
       </div>
 
-      {/* Message Area */}
-      <div 
-        ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-6 bg-slate-50/50 flex flex-col gap-6 scroll-smooth"
-      >
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-6 bg-slate-50/50 flex flex-col gap-6">
         {messages.map((m, i) => {
           const isBlured = showPaywall && m.role === 'assistant' && i === messages.length - 1;
           return (
@@ -178,7 +176,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
               } ${isBlured ? 'max-h-24 overflow-hidden relative' : ''}`}>
                 {isBlured ? (
                   <div className="blur-[10px] select-none opacity-40">
-                    Cette réponse est cruciale pour votre avenir. Voici ce que je vois : Une rencontre imminente va bouleverser vos projets actuels. Il est essentiel d'être prêt à...
+                    Voici l'analyse complète que j'ai reçue pour vous. Les énergies indiquent un changement majeur qui va impacter votre situation très rapidement. Il est impératif d'anticiper cet événement pour ne pas être surprise. Cette personne cache quelque chose qui sera révélé bientôt.
                   </div>
                 ) : m.content}
               </div>
@@ -196,12 +194,11 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         )}
       </div>
 
-      {/* Actions */}
       {showPaywall ? (
         <div className="px-4 py-8 bg-white border-t z-30 shadow-[0_-20px_40px_rgba(0,0,0,0.08)]">
           <div className="max-w-md mx-auto text-center space-y-5 animate-in slide-in-from-bottom-6">
-            <h4 className="text-xl font-black text-indigo-950 tracking-tight">Révélation complète en attente</h4>
-            <p className="text-sm text-slate-500">Pour lire l'analyse de {psychic.name} et poser vos questions en illimité, activez votre accès.</p>
+            <h4 className="text-xl font-black text-indigo-950 tracking-tight">Votre vérité est prête</h4>
+            <p className="text-sm text-slate-500">Débloquez la réponse de {psychic.name} et accédez à votre chat privé en illimité.</p>
             <button 
               onClick={onAction}
               className="w-full bg-gradient-to-b from-amber-400 to-amber-600 text-white py-5 rounded-2xl font-black text-lg shadow-[0_5px_0_0_#b45309] active:translate-y-1 active:shadow-none transition-all cursor-pointer flex flex-col items-center"
@@ -217,13 +214,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
         </div>
       ) : (
         <div className="p-4 border-t bg-white flex gap-3 pb-10 md:pb-4 shadow-inner">
-          <input 
-            value={input} 
-            onChange={e=>setInput(e.target.value)} 
-            onKeyPress={e=>e.key==='Enter' && handleSend()} 
-            placeholder="Écrivez votre question..." 
-            className="flex-1 bg-slate-50 rounded-2xl px-6 py-4 outline-none border-2 border-transparent focus:border-indigo-100" 
-          />
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && handleSend()} placeholder="Écrivez votre question..." className="flex-1 bg-slate-50 rounded-2xl px-6 py-4 outline-none border-2 border-transparent focus:border-indigo-100" />
           <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-2xl shadow-lg active:scale-90 transition-transform"><Send size={24}/></button>
         </div>
       )}
@@ -250,7 +241,6 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Logique de déblocage après Connexion/Inscription
   useEffect(() => {
     if (session?.user) {
       supabase.from('profiles').select('is_premium').eq('id', session.user.id).single()
@@ -258,12 +248,8 @@ export default function App() {
             const premiumStatus = !!data?.is_premium;
             setIsPremium(premiumStatus);
             if (viewState === 'auth') {
-                if (premiumStatus) {
-                  setViewState('list'); // Déjà payé, on revient
-                } else {
-                  // Pas encore payé, on envoie vers Stripe
-                  window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
-                }
+                if (premiumStatus) setViewState('list');
+                else window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
             }
         });
     }
@@ -278,7 +264,7 @@ export default function App() {
 
   const handleAction = () => {
     if (!session) {
-        setIsLoginMode(false); // On force l'inscription d'abord
+        setIsLoginMode(false);
         setViewState('auth');
     } else {
         window.location.href = `${STRIPE_LINK}?client_reference_id=${session.user.id}`;
@@ -287,9 +273,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col font-sans">
-      <Helmet><title>AstroPure | Voyance & Astrologie Privée</title></Helmet>
+      <Helmet><title>AstroPure | Cabinet de Voyance & Horoscope</title></Helmet>
 
-      {/* Nav */}
       <nav className="bg-white/90 backdrop-blur-md border-b h-16 flex items-center justify-between px-6 sticky top-0 z-50">
         <div className="font-serif font-black text-2xl text-indigo-950 flex items-center gap-2 cursor-pointer" onClick={() => {setViewState('list'); setSelectedPsychic(null); setSelectedSign(null); setActiveTab('voyance');}}>
           <Moon className="text-indigo-600" size={28} fill="currentColor"/> AstroPure
@@ -299,12 +284,11 @@ export default function App() {
             {session ? (
                 <button onClick={() => supabase.auth.signOut()} className="text-slate-400 p-2"><LogOut size={22}/></button>
             ) : (
-                <button onClick={() => {setIsLoginMode(true); setViewState('auth');}} className="text-[11px] font-black text-indigo-600 bg-indigo-50/50 px-5 py-2.5 rounded-full uppercase border border-indigo-100 tracking-tight">Accès Client</button>
+                <button onClick={() => {setIsLoginMode(true); setViewState('auth');}} className="text-[11px] font-black text-indigo-600 bg-indigo-50/50 px-5 py-2.5 rounded-full uppercase border border-indigo-100 tracking-tight">Espace Client</button>
             )}
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="flex-1 overflow-y-auto pb-32">
         {viewState === 'auth' ? (
             <AuthView isLoginMode={isLoginMode} onAuthSuccess={() => {}} onCancel={() => setViewState('list')} onSwitchToLogin={() => setIsLoginMode(!isLoginMode)}/>
@@ -342,13 +326,22 @@ export default function App() {
                 <div className="max-w-4xl mx-auto px-6 py-12">
                     <div className="text-center mb-16">
                         <h1 className="text-4xl font-serif font-black text-indigo-900 leading-tight">Cabinet de Voyance Privée</h1>
-                        <p className="text-slate-500 text-base mt-4 max-w-sm mx-auto">Consultez nos experts en direct pour une réponse immédiate et confidentielle.</p>
+                        <p className="text-slate-500 text-base mt-4 max-w-sm mx-auto">Consultez nos experts en direct pour une réponse immédiate.</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                         {VOYANTES.map(p => (
                             <div key={p.id} onClick={() => setSelectedPsychic(p)} className="bg-white rounded-[3rem] p-8 text-center border border-slate-100 shadow-xl hover:border-indigo-200 transition-all group relative cursor-pointer">
                                 {p.isTop && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-[10px] font-black px-6 py-2 rounded-full uppercase shadow-lg">Expert Recommandé</div>}
                                 <img src={p.image} className="w-32 h-32 rounded-full object-cover mx-auto mb-6 border-4 border-white shadow-xl" />
+                                
+                                <div className="flex flex-col items-center gap-2 mb-4">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                      <div className="flex text-amber-400">{[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}</div>
+                                      <span className="text-sm font-black text-slate-800 ml-1">{p.rating}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold tracking-widest"><Users size={12}/> <span>{p.reviews.toLocaleString()} avis</span></div>
+                                </div>
+
                                 <h3 className="font-black text-2xl text-indigo-950 mb-1">{p.name}</h3>
                                 <p className="text-indigo-600 text-[11px] font-black uppercase mb-4 tracking-[0.2em]">{p.style}</p>
                                 <p className="text-sm text-slate-500 italic mb-8 h-auto min-h-[60px]">"{p.desc}"</p>
@@ -373,7 +366,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Tabs */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-white/90 backdrop-blur-xl border border-white/20 h-20 rounded-[2.5rem] flex items-center justify-around z-50 px-8 shadow-[0_15px_50px_rgba(0,0,0,0.15)]">
         <button onClick={() => { setActiveTab('voyance'); setSelectedPsychic(null); setSelectedSign(null); }} className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === 'voyance' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
           <MessageCircle size={26} fill={activeTab === 'voyance' ? "currentColor" : "none"}/><span className="text-[10px] uppercase font-black tracking-widest">Voyance</span>
@@ -383,28 +375,24 @@ export default function App() {
         </button>
       </div>
 
-      {/* Modales */}
+      {/* --- MODALES --- */}
       <Modal isOpen={modalType === 'cgv'} onClose={() => setModalType(null)} title="CGV / CGU">
         <h4 className="font-bold text-indigo-950">Abonnement</h4>
-        <p>Tarif : {PRICE_TEXT} par mois. Sans engagement. Résiliation possible par simple email à {CONTACT_EMAIL}.</p>
-        <h4 className="font-bold text-indigo-950">Nature du Service</h4>
-        <p>AstroPure est un service de divertissement par chat et astrologie. Les réponses sont fournies à titre indicatif.</p>
+        <p>Tarif : {PRICE_TEXT} par mois. Sans engagement. Résiliation par simple email à {CONTACT_EMAIL}.</p>
+        <h4 className="font-bold text-indigo-950">Service</h4>
+        <p>AstroPure est un service récréatif de divertissement. Les réponses IA ne remplacent pas un avis professionnel.</p>
       </Modal>
 
       <Modal isOpen={modalType === 'privacy'} onClose={() => setModalType(null)} title="Politique de Confidentialité">
-        <h4 className="font-bold text-indigo-950">Données Personnelles</h4>
-        <p>Nous collectons votre adresse e-mail pour la gestion de votre abonnement et l'historique de vos conversations.</p>
-        <h4 className="font-bold text-indigo-950">Confidentialité du Chat</h4>
-        <p>Vos conversations sont strictement privées et cryptées. Elles ne sont jamais partagées avec des tiers.</p>
-        <h4 className="font-bold text-indigo-950">Sécurité des paiements</h4>
-        <p>Le traitement des paiements est assuré par Stripe (leader mondial sécurisé). Aucune coordonnée bancaire ne transite sur nos serveurs.</p>
+        <h4 className="font-bold text-indigo-950">Protection des données</h4>
+        <p>Nous collectons votre email pour la gestion de l'abonnement. Vos conversations sont cryptées et privées.</p>
       </Modal>
 
       <Modal isOpen={modalType === 'mentions'} onClose={() => setModalType(null)} title="Mentions Légales">
         <p><strong>Editeur :</strong> ALTEO CONSULTING</p>
         <p><strong>Adresse :</strong> 2 RUE NOTRE-DAME DES VICTOIRES, 75002 PARIS</p>
         <p><strong>SIRET :</strong> 99335347300016</p>
-        <p><strong>Capital social :</strong> 5 000,00 €</p>
+        <p><strong>Capital :</strong> 5 000,00 €</p>
         <p><strong>Contact :</strong> {CONTACT_EMAIL}</p>
       </Modal>
 
