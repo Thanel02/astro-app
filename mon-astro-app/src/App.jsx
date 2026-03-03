@@ -155,7 +155,7 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none text-slate-900">
+    <div className="fixed inset-0 bg-white z-[60] flex flex-col md:max-w-2xl md:mx-auto shadow-2xl overflow-hidden overscroll-none text-slate-900 font-sans">
       <div className="flex items-center gap-4 py-4 px-5 border-b bg-white/80 backdrop-blur-md sticky top-0 z-20">
         <button onClick={onGoBack} className="p-2 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors"><ArrowLeft size={20}/></button>
         <div className="relative">
@@ -201,31 +201,28 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
                             {blurryPart || "Voici l'analyse complète que j'ai reçue pour vous. Les énergies indiquent un changement majeur qui va impacter votre situation très rapidement. Il est impératif d'anticiper cet événement pour ne pas être surprise. Cette personne cache quelque chose qui sera révélé bientôt."}
                         </span>
                         
-                        {/* PAYWALL OVERLAY - BOUTON PRESTIGE OR */}
+                        {/* PAYWALL OVERLAY */}
                         <div className="absolute inset-x-0 -bottom-2 pt-14 pb-2 flex flex-col items-center justify-end z-20">
-                            <div className="bg-white p-8 rounded-[3rem] shadow-[0_30px_70px_rgba(0,0,0,0.3)] border border-amber-100 text-center animate-in slide-in-from-bottom-12 w-full backdrop-blur-xl">
-                                <div className="w-16 h-16 bg-gradient-to-tr from-amber-100 to-amber-50 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
-                                    <Sparkles size={32} className="text-amber-500 animate-pulse" />
-                                </div>
-                                
-                                <p className="text-[18px] font-black text-indigo-950 leading-tight mb-6">
+                            <div className="bg-white/95 p-8 rounded-[3rem] shadow-xl border border-slate-100 text-center animate-in slide-in-from-bottom-12 w-full backdrop-blur-xl">
+                                <p className="text-[17px] font-black text-indigo-950 leading-tight mb-6">
                                     Ma vision est complète.<br/>
-                                    <span className="text-amber-600">Voulez-vous savoir la vérité ?</span>
+                                    <span className="text-amber-600 uppercase text-sm tracking-widest">Voulez-vous savoir la vérité ?</span>
                                 </p>
 
+                                {/* BOUTON EN RÉEL RELIEF (3D) */}
                                 <button 
                                     onClick={onAction} 
-                                    className="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white text-[17px] font-black py-6 rounded-2xl shadow-[0_15px_35px_rgba(245,158,11,0.4)] transition-all transform hover:scale-[1.03] active:scale-95 flex items-center justify-center gap-3 mb-5 border-b-4 border-amber-700 animate-bounce-subtle"
+                                    className="relative w-full bg-gradient-to-b from-amber-300 via-amber-500 to-amber-600 text-white text-[17px] font-black py-6 rounded-2xl flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02] active:translate-y-1 active:shadow-inner border-t border-amber-200 shadow-[0_10px_0_0_#b45309,0_15px_30px_rgba(0,0,0,0.3)] group animate-bounce-subtle"
                                 >
-                                    <Zap size={22} fill="currentColor" />
-                                    DÉCOUVRIR MA RÉPONSE ({PRICE_TEXT})
+                                    <Eye size={22} className="group-hover:scale-110 transition-transform" />
+                                    DÉBLOQUER MA RÉPONSE ({PRICE_TEXT})
                                 </button>
 
-                                <div className="space-y-2">
+                                <div className="space-y-2 mt-8">
                                     <p className="text-[11px] text-slate-600 font-black uppercase tracking-widest flex items-center justify-center gap-2">
                                         <ShieldCheck size={16} className="text-emerald-500" /> Libellé discret : "Altéo Conseil"
                                     </p>
-                                    <p className="text-[10px] text-slate-400 font-medium">Accès immédiat • Annulation sans frais par email</p>
+                                    <p className="text-[10px] text-slate-400 font-medium italic">Accès immédiat • Annulation 1 clic</p>
                                 </div>
                             </div>
                         </div>
@@ -246,8 +243,8 @@ const ChatView = ({ psychic, isPremium, onGoBack, onAction, session }) => {
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes bounce-subtle {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.02); }
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
         }
         .animate-bounce-subtle {
           animation: bounce-subtle 2s infinite ease-in-out;
